@@ -144,6 +144,10 @@ func (s *Server) requireRole(role string, next http.HandlerFunc) http.HandlerFun
 			http.Error(w, "insufficient role", http.StatusForbidden)
 			return
 		}
+		if !validPathID(r) {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
 		next(w, r)
 	})
 }
