@@ -97,6 +97,8 @@ func (s *Server) mutation(eventID, action, objectType, role string, next http.Ha
 			http.Error(rec, "forbidden origin", http.StatusForbidden)
 		} else if !satisfies(id, role) {
 			http.Error(rec, "insufficient role", http.StatusForbidden)
+		} else if !validPathID(r) {
+			http.Error(rec, "invalid id", http.StatusBadRequest)
 		} else {
 			next(rec, r)
 		}

@@ -10,6 +10,10 @@ below assume a cookie jar `jar.txt` populated by a real login, or
 Authorization per endpoint follows the three roles: reads need `viewer`, running scans and
 config writes need `operator`, deletes need `admin`.
 
+The `{id}` of scans, targets, nodes, schedules, scan policies, template sets and service accounts
+is a UUID in its canonical 36-character form. Any other value is rejected `400 invalid id` after
+the authentication and role checks.
+
 Cookie-authenticated state-changing requests must include an `Origin` header matching the
 configured `APP_BASE_URL` origin. If a browser omits `Origin`, `Sec-Fetch-Site: same-origin` is
 accepted; `same-site` is intentionally not sufficient because sibling subdomains may be
