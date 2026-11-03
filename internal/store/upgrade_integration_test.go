@@ -18,179 +18,39 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// v047BetaCommit is the commit released as v0.4.7-beta (2026-10-03). The
-// database below is built the way that release built it: its embedded
-// migrations 0001 to 0005, applied and recorded like its Migrate did.
-const v047BetaCommit = "2252888aeafbf4250dbfa6a09142c98396742e31"
+// lastReleaseMigration is the number of embedded migrations the last release
+// shipped: v0.5.0 shipped 0001 to 0006. The upgrade test builds a database of
+// that release and upgrades it to the current migrations. The release
+// procedure raises it when a release ships a new migration.
+const lastReleaseMigration = 6
 
-// v047BetaMigrations are the migrations v0.4.7-beta shipped, with the SHA-256
-// of each file at v047BetaCommit. The upgrade test applies the embedded copies,
-// so they must still be byte-identical to the release.
-var v047BetaMigrations = []struct{ name, checksum string }{
-	{"0001_init.sql", "055c9e0422bf1b907601b68441b965e81653a3b14ea2ce8feb020c2b7827fc96"},
-	{"0002_add_scan_policy_response_limits.sql", "61405adb7a97b09c18fb1e4b200600fefb2b44eb5a71f1e3c0a1635d3fa85ff0"},
-	{"0003_finding_result_identity.sql", "53b687474cce5a7d5754d0d68dac90f648ce14bf11362fc065ccbb63e7f9d8a0"},
-	{"0004_schedule_timezone.sql", "698ed0ab44f1e65fe725a61c7d39b218bac6b9a1f7bf53f32b6a3d9442bdfb04"},
-	{"0005_scan_notification_outbox.sql", "6023690ceb7851c7095ba6531798407cbb8757becf70e39294a12041ebf4efb1"},
+// upgradeSeedStep is what the upgrade test needs to know about one migration.
+// Every embedded migration has one, so every migration pull request brings
+// its own.
+type upgradeSeedStep struct {
+	// checksum is the SHA-256 of the migration file. Applied migrations are
+	// immutable, so the test fails when the file no longer matches it.
+	checksum string
+	// seed runs right after the migration while the test builds the last
+	// release's database. It writes synthetic rows using only the tables and
+	// columns that exist at that point, so an old step never breaks: rows in
+	// the tables the migration creates, and values in the columns it adds.
+	// Example domains, documentation address ranges and made-up names, never
+	// real data.
+	seed string
+	// added states, per table, what rows written before the migration hold in
+	// each column it adds, as the column's to_jsonb value. A column added with
+	// a default lists that default (for example `"UTC"`); a nullable column
+	// without one lists null. The test reads it only while the migration is
+	// newer than the last release: Migrate then runs it on the seeded rows.
+	added map[string]map[string]string
 }
 
-// columnsAddedSinceV047Beta states, per table, what the rows of a database
-// upgraded from v0.4.7-beta hold in every column a later migration added, as
-// the column's to_jsonb value. A column added with a default lists that
-// default (for example `"UTC"`); a nullable column without one lists null. A
-// new migration that adds a column to a table seeded below must add it here.
-var columnsAddedSinceV047Beta = map[string]map[string]string{
-	// 0006_template_sync_source.sql: seeded from the environment at startup,
-	// never by the migration.
-	"app_settings": {
-		"template_sync_repo":              "null",
-		"template_sync_ref":               "null",
-		"template_sync_source_updated_at": "null",
-		"template_sync_source_updated_by": "null",
-	},
-	// 0006_template_sync_source.sql: NULL marks pre-migration sync history.
-	"template_sync_runs": {
-		"restored":    "null",
-		"source_repo": "null",
-		"source_ref":  "null",
-	},
-}
-
-// TestUpgradeFromV047BetaPostgres restores a v0.4.7-beta database dump, runs
-// the current migrations on it and checks that the schema equals a fresh
-// install and that every row it held reads back unchanged.
-//
-// The dump is generated here, not stored as a fixture: the v0.4.7-beta schema
-// comes from this repository's migrations 0001 to 0005 (see v047BetaCommit),
-// filled with synthetic seed data, dumped with pg_dump and restored with psql.
-func TestUpgradeFromV047BetaPostgres(t *testing.T) {
-	dsn := os.Getenv("NSC_TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("NSC_TEST_DATABASE_URL is not set")
-	}
-	pgDump := findPGDump(t)
-	psql := findPSQL(t, pgDump)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel()
-
-	release, schema := openEmptyIsolatedPostgres(t, ctx, dsn)
-	applyV047BetaMigrations(t, ctx, release.pool)
-	seedV047BetaData(t, ctx, release.pool)
-	tables := schemaTables(t, ctx, release.pool)
-	seeded := snapshotSchema(t, ctx, release.pool, tables)
-	for _, table := range tables {
-		if len(seeded.rows[table]) == 0 {
-			t.Fatalf("v0.4.7-beta table %s has no seed rows; seed every table so the upgrade test reads it back", table)
-		}
-	}
-	release.pool.Close()
-
-	dumpFile := filepath.Join(t.TempDir(), "v0.4.7-beta.sql")
-	dumpSchemaWithData(t, ctx, pgDump, dsn, schema, dumpFile)
-	admin, err := Open(ctx, dsn)
-	if err != nil {
-		t.Fatalf("open admin store: %v", err)
-	}
-	defer admin.Close()
-	if _, err := admin.pool.Exec(ctx, "DROP SCHEMA "+pgx.Identifier{schema}.Sanitize()+" CASCADE"); err != nil {
-		t.Fatalf("drop v0.4.7-beta schema before restore: %v", err)
-	}
-	restoreDump(t, ctx, psql, dsn, dumpFile)
-
-	upgraded := openSchemaStore(t, ctx, dsn, schema)
-	restored := snapshotSchema(t, ctx, upgraded.pool, tables)
-	compareSnapshots(t, "restored dump", seeded, restored, nil)
-
-	if err := upgraded.Migrate(ctx); err != nil {
-		t.Fatalf("Migrate the restored v0.4.7-beta database: %v", err)
-	}
-	checkUpgradedMigrationHistory(t, ctx, upgraded.pool)
-
-	fresh, freshSchema := openEmptyIsolatedPostgres(t, ctx, dsn)
-	if err := fresh.Migrate(ctx); err != nil {
-		t.Fatalf("Migrate a fresh install: %v", err)
-	}
-	upgradedDump := normalizedSchemaDump(t, ctx, pgDump, dsn, schema)
-	freshDump := normalizedSchemaDump(t, ctx, pgDump, dsn, freshSchema)
-	if upgradedDump != freshDump {
-		t.Fatalf("schema upgraded from v0.4.7-beta differs from a fresh install: %s",
-			firstSchemaDifference(upgradedDump, freshDump))
-	}
-
-	migrated := snapshotSchema(t, ctx, upgraded.pool, tables)
-	compareSnapshots(t, "migrated database", seeded, migrated, columnsAddedSinceV047Beta)
-	checkV047BetaDataThroughStore(t, ctx, upgraded)
-}
-
-// applyV047BetaMigrations builds the v0.4.7-beta schema: it applies the
-// embedded release migrations and records them with their checksums in one
-// transaction, the same history table and records that release's Migrate wrote.
-func applyV047BetaMigrations(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
-	t.Helper()
-	entries, err := migrationsFS.ReadDir("migrations")
-	if err != nil {
-		t.Fatalf("list embedded migrations: %v", err)
-	}
-	var embedded []string
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			embedded = append(embedded, entry.Name())
-		}
-	}
-	sort.Strings(embedded)
-	if len(embedded) < len(v047BetaMigrations) {
-		t.Fatalf("embedded migrations %v are fewer than the %d v0.4.7-beta shipped", embedded, len(v047BetaMigrations))
-	}
-
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		t.Fatalf("begin v0.4.7-beta migrations: %v", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	if _, err := tx.Exec(ctx, `
-		CREATE TABLE IF NOT EXISTS schema_migrations (
-			version    TEXT PRIMARY KEY,
-			checksum_sha256 TEXT,
-			applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
-		)`); err != nil {
-		t.Fatalf("create v0.4.7-beta migration history: %v", err)
-	}
-	for i, migration := range v047BetaMigrations {
-		if embedded[i] != migration.name {
-			t.Fatalf("embedded migration %d is %s, want v0.4.7-beta's %s", i+1, embedded[i], migration.name)
-		}
-		sqlBytes, err := migrationsFS.ReadFile("migrations/" + migration.name)
-		if err != nil {
-			t.Fatalf("read migration %s: %v", migration.name, err)
-		}
-		if sum := fmt.Sprintf("%x", sha256.Sum256(sqlBytes)); sum != migration.checksum {
-			t.Fatalf("migration %s changed since v0.4.7-beta (%s): checksum %s, want %s",
-				migration.name, v047BetaCommit, sum, migration.checksum)
-		}
-		if _, err := tx.Exec(ctx, string(sqlBytes)); err != nil {
-			t.Fatalf("apply v0.4.7-beta migration %s: %v", migration.name, err)
-		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO schema_migrations (version, checksum_sha256) VALUES ($1, $2)`,
-			migration.name, migration.checksum); err != nil {
-			t.Fatalf("record v0.4.7-beta migration %s: %v", migration.name, err)
-		}
-	}
-	if err := tx.Commit(ctx); err != nil {
-		t.Fatalf("commit v0.4.7-beta migrations: %v", err)
-	}
-}
-
-// seedV047BetaData fills every v0.4.7-beta table with synthetic rows: example
-// domains, documentation address ranges and made-up names, never real data.
-// The rows mix NULL and set optional columns, non-ASCII text, timestamps with
-// microseconds and offsets, arrays and JSON.
-func seedV047BetaData(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
-	t.Helper()
-	if _, err := pool.Exec(ctx, `
-BEGIN;
-
+// upgradeSeedSteps holds one step per embedded migration, keyed by file name.
+var upgradeSeedSteps = map[string]upgradeSeedStep{
+	"0001_init.sql": {
+		checksum: "055c9e0422bf1b907601b68441b965e81653a3b14ea2ce8feb020c2b7827fc96",
+		seed: `
 UPDATE app_settings
    SET retention_enabled = true,
        scan_retention_days = 90,
@@ -281,31 +141,28 @@ INSERT INTO targets (id, name, hosts, tags, created_by, created_at, updated_at) 
 INSERT INTO scan_policies (id, name, template_set_id, rate_limit, concurrency, timeout_sec, max_host_error,
                            created_by, created_at, updated_at, discovery_enabled, discovery_ports,
                            discovery_timeout_sec, discovery_rate, discovery_probe_timeout_ms, discovery_retries,
-                           discovery_scan_type, discovery_host_discovery, response_size_read, response_size_save,
-                           notify_enabled, notify_recipients, notify_min_severity) VALUES
+                           discovery_scan_type, discovery_host_discovery) VALUES
   ('ff78a637-51a2-4f4c-84d7-efd8ca16ece9', 'Nächtlich – Web', 'a67806ce-f4cc-4ba7-acb1-c0e6e7db0d58',
    150, 25, 10, 30, 'zoe.admin@example.com', '2026-08-06 08:00:00+00', '2026-10-01 08:00:00.000001+00',
-   true, '80,443,8000-8443', 600, 1000, 1500, 2, 'connect', false, 4194304, 524288,
-   true, '{secops@example.com,"Jürgen Weiß <jurgen@example.org>"}', 'medium'),
+   true, '80,443,8000-8443', 600, 1000, 1500, 2, 'connect', false),
   ('ff25dfda-cd65-4239-9807-49803cca89bb', 'ad-hoc defaults', '809150bd-2cd1-4e06-9171-bf16e0c95e1d',
    NULL, NULL, NULL, NULL, NULL, '2026-08-07 08:00:00+00', '2026-08-07 08:00:00+00',
-   false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+   false, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 INSERT INTO schedules (id, name, cron, enabled, next_run_at, last_run_at, last_scan_id, created_by,
-                       created_at, updated_at, scan_policy_id, target_id, timezone) VALUES
+                       created_at, updated_at, scan_policy_id, target_id) VALUES
   ('38affc28-4c01-4b31-a0b4-201867f8a20e', 'Werktags 03:00', '0 3 * * 1-5', true,
    '2026-10-05 01:00:00+00', '2026-10-02 01:00:00.004321+00', NULL, 'zoe.admin@example.com',
    '2026-08-08 08:00:00+00', '2026-09-20 08:00:00+00',
-   'ff78a637-51a2-4f4c-84d7-efd8ca16ece9', 'e5518069-8a40-480d-bb6b-d26895a3c142', 'Europe/Berlin'),
+   'ff78a637-51a2-4f4c-84d7-efd8ca16ece9', 'e5518069-8a40-480d-bb6b-d26895a3c142'),
   ('d1887995-ae89-4dc6-a5bc-fde7807a2594', 'paused legacy sweep', '30 2 1 * *', false,
    NULL, NULL, NULL, NULL, '2026-08-09 08:00:00+00', '2026-08-09 08:00:00+00',
-   'ff25dfda-cd65-4239-9807-49803cca89bb', '7fbfe5f3-ab71-414c-9117-84cc90897fae', 'UTC');
+   'ff25dfda-cd65-4239-9807-49803cca89bb', '7fbfe5f3-ab71-414c-9117-84cc90897fae');
 
 INSERT INTO scans (id, node_scan_id, state, spec, nuclei_version, templates_commit, error, created_at,
                    started_at, finished_at, target_id, template_set_id, source, schedule_id, raw_object_key,
                    log_object_key, node_id, scan_policy_id, discovered_targets, covered_endpoints,
-                   coverage_warning, skipped_finding_count, coverage_origin,
-                   notify_enabled, notify_recipients, notify_min_severity) VALUES
+                   coverage_warning, skipped_finding_count, coverage_origin) VALUES
   ('cfc3a63a-5eb6-4004-ada1-3d124a6c1781', 'node-run-0001', 'complete',
    '{"hosts": ["app.example.com", "198.51.100.0/28"], "rate_limit": 150, "templates": ["http-missing-security-headers", "custom-login-panel-ümlaut"], "discovery": {"ports": "80,443,8000-8443", "enabled": true}}',
    'v3.4.10', '5f0c1d2e3a4b5c6d7e8f90a1b2c3d4e5f6a7b8c9', NULL,
@@ -315,21 +172,21 @@ INSERT INTO scans (id, node_scan_id, state, spec, nuclei_version, templates_comm
    'scans/cfc3a63a-5eb6-4004-ada1-3d124a6c1781/log.txt', 'b27e6209-d9aa-423b-b3b5-86d688874b08',
    'ff78a637-51a2-4f4c-84d7-efd8ca16ece9', '{app.example.com:443,198.51.100.5:8443}',
    '[{"endpoint": "app.example.com:443", "template_id": "http-missing-security-headers"}, {"endpoint": "198.51.100.5:8443", "template_id": "custom-login-panel-ümlaut"}]',
-   NULL, 1, 'node', true, '{secops@example.com,"Jürgen Weiß <jurgen@example.org>"}', 'medium'),
+   NULL, 1, 'node'),
   ('47df5ac5-9906-4999-b147-fd30f25a51f6', NULL, 'failed',
    '{"hosts": ["https://203.0.113.7:8443/api"], "templates": []}',
    NULL, NULL, 'Scanner nicht erreichbar: connection refused (Ü-Test)',
    '2026-10-01 12:00:00+00', NULL, '2026-10-01 12:00:30+00',
    '7fbfe5f3-ab71-414c-9117-84cc90897fae', '809150bd-2cd1-4e06-9171-bf16e0c95e1d', 'adhoc',
    NULL, NULL, NULL, NULL, 'ff25dfda-cd65-4239-9807-49803cca89bb', NULL, NULL,
-   NULL, 0, 'import_untrusted', false, NULL, NULL),
+   NULL, 0, 'import_untrusted'),
   ('8cf6a182-5e43-4d8e-b60a-494f19e7d9e1', NULL, 'complete',
    '{"hosts": ["https://203.0.113.7:8443/api"], "imported": true, "bundle": {"format": "goodnightsec/nsc/scan-bundle", "version": 1}}',
    'v3.4.9', NULL, NULL,
    '2026-09-20 09:00:00+00', '2026-09-20 09:00:00+00', '2026-09-20 09:00:00+00',
    '7fbfe5f3-ab71-414c-9117-84cc90897fae', NULL, 'import',
    NULL, NULL, NULL, 'dcfddfaf-b417-417d-8f7f-d67650349614', NULL, '{}', '[]',
-   'Trace incomplete for 2 requests', 0, 'import_trusted', false, '{}', NULL);
+   'Trace incomplete for 2 requests', 0, 'import_trusted');
 
 UPDATE schedules SET last_scan_id = 'cfc3a63a-5eb6-4004-ada1-3d124a6c1781'
  WHERE id = '38affc28-4c01-4b31-a0b4-201867f8a20e';
@@ -338,8 +195,7 @@ INSERT INTO finding_lifecycle (id, dedup_key, template_id, name, severity, host,
                                first_seen_scan, last_seen_scan, first_seen_at, last_seen_at, latest_occurrence_id,
                                disposition_note, disposition_by, disposition_at, disposition, accept_expires_at,
                                recast_severity, times_mitigated, recast_note, recast_by, recast_at,
-                               last_covering_scan, result_discriminator, endpoint_key,
-                               matcher_name, extractor_name, extracted_results) VALUES
+                               last_covering_scan, result_discriminator, endpoint_key) VALUES
   (1, 'dk-synthetic-0001', 'http-missing-security-headers', 'HTTP Missing Security Headers', 'info',
    'app.example.com', 'https://app.example.com/', 'http', '{}', '{misconfig,headers,generic}',
    'cfc3a63a-5eb6-4004-ada1-3d124a6c1781', 'cfc3a63a-5eb6-4004-ada1-3d124a6c1781',
@@ -347,38 +203,95 @@ INSERT INTO finding_lifecycle (id, dedup_key, template_id, name, severity, host,
    'Akzeptiert bis zum Relaunch – siehe Ticket „WEB-42“', 'zoe.admin@example.com', '2026-10-02 09:30:00+02',
    'accepted', '2026-12-31 23:59:59.999999+01', 'low', 2, 'Nur intern erreichbar', 'zoe.admin@example.com',
    '2026-10-02 09:31:00+02', 'cfc3a63a-5eb6-4004-ada1-3d124a6c1781',
-   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'app.example.com:443',
-   'strict-transport-security', '', '{}'),
+   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'app.example.com:443'),
   (2, 'dk-synthetic-0002', 'custom-login-panel-ümlaut', NULL, NULL, NULL, NULL, NULL,
    '{CVE-2099-0002}', '{}', NULL, NULL,
    '2026-09-20 09:00:00+00', '2026-09-20 09:00:00+00', NULL,
-   NULL, NULL, NULL, 'none', NULL, NULL, 0, NULL, NULL, NULL, NULL, '', '', '', 'version', '{"2.4.1","β-release"}');
+   NULL, NULL, NULL, 'none', NULL, NULL, 0, NULL, NULL, NULL, NULL, '', '');
 
 INSERT INTO findings (id, scan_id, template_id, name, severity, host, matched_at, type, raw, created_at,
-                      cve, tags, target_id, dedup_key, finding_id, raw_line, result_discriminator,
-                      matcher_name, extractor_name, extracted_results) VALUES
+                      cve, tags, target_id, dedup_key, finding_id, raw_line, result_discriminator) VALUES
   (1, 'cfc3a63a-5eb6-4004-ada1-3d124a6c1781', 'http-missing-security-headers', 'HTTP Missing Security Headers',
    'info', 'app.example.com', 'https://app.example.com/', 'http',
    '{"host": "app.example.com", "info": {"name": "HTTP Missing Security Headers", "tags": ["misconfig", "headers"], "severity": "info"}, "type": "http", "matched-at": "https://app.example.com/", "template-id": "http-missing-security-headers", "matcher-name": "x-frame-options"}',
    '2026-10-02 01:05:00+00', '{}', '{misconfig,headers}', 'e5518069-8a40-480d-bb6b-d26895a3c142',
    'dk-synthetic-0001', 1,
    '{"template-id":"http-missing-security-headers","host":"app.example.com","matcher-name":"x-frame-options"}',
-   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'x-frame-options', '', '{}'),
+   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'),
   (2, 'cfc3a63a-5eb6-4004-ada1-3d124a6c1781', 'http-missing-security-headers', 'HTTP Missing Security Headers',
    'info', 'app.example.com', 'https://app.example.com/', 'http',
    '{"host": "app.example.com", "info": {"name": "HTTP Missing Security Headers", "severity": "info"}, "type": "http", "matched-at": "https://app.example.com/", "template-id": "http-missing-security-headers", "matcher-name": "strict-transport-security", "meta": {"note": "Prüfung 🌙", "empty": null, "ratio": 0.25}}',
    '2026-10-02 01:05:00.000001+00', '{}', '{misconfig,headers,generic}', 'e5518069-8a40-480d-bb6b-d26895a3c142',
    'dk-synthetic-0001', 1, NULL,
-   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'strict-transport-security', '', '{}'),
+   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'),
   (3, '8cf6a182-5e43-4d8e-b60a-494f19e7d9e1', 'custom-login-panel-ümlaut', NULL, NULL, NULL, NULL, NULL,
    '{"template-id": "custom-login-panel-ümlaut", "extractor-name": "version", "extracted-results": ["2.4.1", "β-release"]}',
    '2026-09-20 09:00:00+00', '{CVE-2099-0002}', '{}', '7fbfe5f3-ab71-414c-9117-84cc90897fae',
-   'dk-synthetic-0002', 2, NULL, '', '', 'version', '{"2.4.1","β-release"}');
+   'dk-synthetic-0002', 2, NULL, '');
 
 UPDATE finding_lifecycle SET latest_occurrence_id = 2 WHERE id = 1;
 UPDATE finding_lifecycle SET latest_occurrence_id = 3 WHERE id = 2;
 SELECT setval('findings_id_seq', 3);
 SELECT setval('finding_lifecycle_id_seq', 2);
+`,
+	},
+	"0002_add_scan_policy_response_limits.sql": {
+		checksum: "61405adb7a97b09c18fb1e4b200600fefb2b44eb5a71f1e3c0a1635d3fa85ff0",
+		seed: `
+UPDATE scan_policies SET response_size_read = 4194304, response_size_save = 524288
+ WHERE id = 'ff78a637-51a2-4f4c-84d7-efd8ca16ece9';
+`,
+		added: map[string]map[string]string{
+			"scan_policies": {"response_size_read": "null", "response_size_save": "null"},
+		},
+	},
+	// The migration fills the new columns of the rows above from findings.raw.
+	// The step adds an occurrence written by a release that has the columns.
+	"0003_finding_result_identity.sql": {
+		checksum: "53b687474cce5a7d5754d0d68dac90f648ce14bf11362fc065ccbb63e7f9d8a0",
+		seed: `
+INSERT INTO findings (id, scan_id, template_id, name, severity, host, matched_at, type, raw, created_at,
+                      cve, tags, target_id, dedup_key, finding_id, raw_line, result_discriminator,
+                      matcher_name, extractor_name, extracted_results) VALUES
+  (4, 'cfc3a63a-5eb6-4004-ada1-3d124a6c1781', 'http-missing-security-headers', 'HTTP Missing Security Headers',
+   'info', 'app.example.com', 'https://app.example.com/', 'http',
+   '{"host": "app.example.com", "type": "http", "matched-at": "https://app.example.com/", "template-id": "http-missing-security-headers", "matcher-name": "content-security-policy", "extracted-results": ["default-src ''self''"]}',
+   '2026-10-02 01:05:00.000002+00', '{}', '{misconfig,headers,generic}', 'e5518069-8a40-480d-bb6b-d26895a3c142',
+   'dk-synthetic-0001', 1, NULL,
+   'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+   'content-security-policy', '', '{"default-src ''self''"}');
+
+UPDATE finding_lifecycle
+   SET latest_occurrence_id = 4, matcher_name = 'content-security-policy',
+       extracted_results = '{"default-src ''self''"}'
+ WHERE id = 1;
+SELECT setval('findings_id_seq', 4);
+`,
+	},
+	"0004_schedule_timezone.sql": {
+		checksum: "698ed0ab44f1e65fe725a61c7d39b218bac6b9a1f7bf53f32b6a3d9442bdfb04",
+		seed: `
+UPDATE schedules SET timezone = 'Europe/Berlin' WHERE id = '38affc28-4c01-4b31-a0b4-201867f8a20e';
+`,
+		added: map[string]map[string]string{
+			"schedules": {"timezone": `"UTC"`},
+		},
+	},
+	"0005_scan_notification_outbox.sql": {
+		checksum: "6023690ceb7851c7095ba6531798407cbb8757becf70e39294a12041ebf4efb1",
+		seed: `
+UPDATE scan_policies
+   SET notify_enabled = true,
+       notify_recipients = '{secops@example.com,"Jürgen Weiß <jurgen@example.org>"}',
+       notify_min_severity = 'medium'
+ WHERE id = 'ff78a637-51a2-4f4c-84d7-efd8ca16ece9';
+
+UPDATE scans
+   SET notify_enabled = true,
+       notify_recipients = '{secops@example.com,"Jürgen Weiß <jurgen@example.org>"}',
+       notify_min_severity = 'medium'
+ WHERE id = 'cfc3a63a-5eb6-4004-ada1-3d124a6c1781';
+UPDATE scans SET notify_recipients = '{}' WHERE id = '8cf6a182-5e43-4d8e-b60a-494f19e7d9e1';
 
 INSERT INTO scan_notification_outbox (scan_id, kind, payload, created_at, claimed_at) VALUES
   ('cfc3a63a-5eb6-4004-ada1-3d124a6c1781', 'digest',
@@ -387,11 +300,234 @@ INSERT INTO scan_notification_outbox (scan_id, kind, payload, created_at, claime
   ('47df5ac5-9906-4999-b147-fd30f25a51f6', 'failed',
    '{"reason": "Scanner nicht erreichbar", "detail": null}',
    '2026-10-01 12:00:30+00', NULL);
+`,
+		added: map[string]map[string]string{
+			"scan_policies": {"notify_enabled": "null", "notify_recipients": "null", "notify_min_severity": "null"},
+			"scans":         {"notify_enabled": "false", "notify_recipients": "null", "notify_min_severity": "null"},
+		},
+	},
+	// The template sync source is seeded from the environment at startup,
+	// never by the migration, and NULL marks sync history from before it.
+	"0006_template_sync_source.sql": {
+		checksum: "283a040263cb77db30ce5dc9d0eb9725e5edae5043b30c21bb2d5f2b883055e2",
+		seed: `
+UPDATE app_settings
+   SET template_sync_repo = 'https://git.example.com/mirror/nuclei-templates.git',
+       template_sync_ref = 'latest',
+       template_sync_source_updated_at = '2026-10-20 08:15:00.123456+00',
+       template_sync_source_updated_by = 'kc|4f1d8a90-77e2-4c55-9a0e-1c2b3d4e5f60';
 
-COMMIT;
-`); err != nil {
-		t.Fatalf("seed v0.4.7-beta data: %v", err)
+INSERT INTO template_sync_runs (id, started_at, finished_at, status, ref_before, ref_after,
+                                added, removed, updated, skipped, error, templates_commit, template_count,
+                                restored, source_repo, source_ref) VALUES
+  ('5b0e3f6c-2d8a-4c1e-9f7b-6a5d4c3b2a19', '2026-10-21 04:00:00+00', '2026-10-21 04:01:05.5+00', 'success',
+   'v10.2.7', 'v10.2.8', 3, 0, 5, 0, NULL, '6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f7', 3,
+   1, 'https://git.example.com/mirror/nuclei-templates.git', 'latest');
+`,
+		added: map[string]map[string]string{
+			"app_settings": {
+				"template_sync_repo":              "null",
+				"template_sync_ref":               "null",
+				"template_sync_source_updated_at": "null",
+				"template_sync_source_updated_by": "null",
+			},
+			"template_sync_runs": {"restored": "null", "source_repo": "null", "source_ref": "null"},
+		},
+	},
+}
+
+// embeddedMigrationNames lists the embedded migration files in the order
+// Migrate applies them.
+func embeddedMigrationNames(t *testing.T) []string {
+	t.Helper()
+	entries, err := migrationsFS.ReadDir("migrations")
+	if err != nil {
+		t.Fatalf("list embedded migrations: %v", err)
 	}
+	var names []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			names = append(names, entry.Name())
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
+// TestEveryMigrationHasUpgradeSeedStep needs no database: it fails when a
+// migration has no seed step, when a step names no embedded migration, or
+// when a migration file no longer matches its recorded checksum.
+func TestEveryMigrationHasUpgradeSeedStep(t *testing.T) {
+	names := embeddedMigrationNames(t)
+	if lastReleaseMigration < 1 || lastReleaseMigration > len(names) {
+		t.Fatalf("lastReleaseMigration = %d, want 1 to %d (the embedded migrations)", lastReleaseMigration, len(names))
+	}
+	embedded := make(map[string]bool, len(names))
+	for _, name := range names {
+		embedded[name] = true
+		step, ok := upgradeSeedSteps[name]
+		if !ok {
+			t.Errorf("migration %s has no step in upgradeSeedSteps; add its seed step, checksum and added columns", name)
+			continue
+		}
+		if strings.TrimSpace(step.seed) == "" {
+			t.Errorf("upgradeSeedSteps[%q] has no seed; write synthetic rows into what the migration adds", name)
+		}
+		sqlBytes, err := migrationsFS.ReadFile("migrations/" + name)
+		if err != nil {
+			t.Fatalf("read migration %s: %v", name, err)
+		}
+		if sum := fmt.Sprintf("%x", sha256.Sum256(sqlBytes)); sum != step.checksum {
+			t.Errorf("migration %s has checksum %s, want %s recorded in upgradeSeedSteps; applied migrations are immutable, add a new migration instead",
+				name, sum, step.checksum)
+		}
+	}
+	for name := range upgradeSeedSteps {
+		if !embedded[name] {
+			t.Errorf("upgradeSeedSteps has a step for %s, which is no embedded migration", name)
+		}
+	}
+}
+
+// TestUpgradeFromLastReleasePostgres builds the database of the last release
+// (migrations 1 to lastReleaseMigration, each followed by its seed step),
+// dumps and restores it, runs the current migrations on it, and checks that
+// the schema equals a fresh install and that every seeded row reads back
+// unchanged.
+//
+// The dump is generated here, not stored as a fixture: it is filled with the
+// synthetic rows of upgradeSeedSteps, dumped with pg_dump and restored with
+// psql.
+func TestUpgradeFromLastReleasePostgres(t *testing.T) {
+	dsn := os.Getenv("NSC_TEST_DATABASE_URL")
+	if dsn == "" {
+		t.Skip("NSC_TEST_DATABASE_URL is not set")
+	}
+	pgDump := findPGDump(t)
+	psql := findPSQL(t, pgDump)
+	names := embeddedMigrationNames(t)
+	if lastReleaseMigration < 1 || lastReleaseMigration > len(names) {
+		t.Fatalf("lastReleaseMigration = %d, want 1 to %d (the embedded migrations)", lastReleaseMigration, len(names))
+	}
+	released, later := names[:lastReleaseMigration], names[lastReleaseMigration:]
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	release, schema := openEmptyIsolatedPostgres(t, ctx, dsn)
+	applyReleaseMigrations(t, ctx, release.pool, released)
+	tables := schemaTables(t, ctx, release.pool)
+	seeded := snapshotSchema(t, ctx, release.pool, tables)
+	for _, table := range tables {
+		if len(seeded.rows[table]) == 0 {
+			t.Fatalf("last-release table %s has no seed rows; seed every table so the upgrade test reads it back", table)
+		}
+	}
+	release.pool.Close()
+
+	dumpFile := filepath.Join(t.TempDir(), "last-release.sql")
+	dumpSchemaWithData(t, ctx, pgDump, dsn, schema, dumpFile)
+	admin, err := Open(ctx, dsn)
+	if err != nil {
+		t.Fatalf("open admin store: %v", err)
+	}
+	defer admin.Close()
+	if _, err := admin.pool.Exec(ctx, "DROP SCHEMA "+pgx.Identifier{schema}.Sanitize()+" CASCADE"); err != nil {
+		t.Fatalf("drop last-release schema before restore: %v", err)
+	}
+	restoreDump(t, ctx, psql, dsn, dumpFile)
+
+	upgraded := openSchemaStore(t, ctx, dsn, schema)
+	restored := snapshotSchema(t, ctx, upgraded.pool, tables)
+	compareSnapshots(t, "restored dump", seeded, restored, nil)
+
+	if err := upgraded.Migrate(ctx); err != nil {
+		t.Fatalf("Migrate the restored last-release database: %v", err)
+	}
+	checkUpgradedMigrationHistory(t, ctx, upgraded.pool, released, len(names))
+
+	fresh, freshSchema := openEmptyIsolatedPostgres(t, ctx, dsn)
+	if err := fresh.Migrate(ctx); err != nil {
+		t.Fatalf("Migrate a fresh install: %v", err)
+	}
+	upgradedDump := normalizedSchemaDump(t, ctx, pgDump, dsn, schema)
+	freshDump := normalizedSchemaDump(t, ctx, pgDump, dsn, freshSchema)
+	if upgradedDump != freshDump {
+		t.Fatalf("schema upgraded from the last release differs from a fresh install: %s",
+			firstSchemaDifference(upgradedDump, freshDump))
+	}
+
+	migrated := snapshotSchema(t, ctx, upgraded.pool, tables)
+	compareSnapshots(t, "migrated database", seeded, migrated, columnsAddedAfter(t, later))
+	checkReleaseDataThroughStore(t, ctx, upgraded)
+}
+
+// applyReleaseMigrations builds the last release's schema in one transaction:
+// each released migration, its record in the history table the way Migrate
+// writes it, then its seed step.
+func applyReleaseMigrations(t *testing.T, ctx context.Context, pool *pgxpool.Pool, released []string) {
+	t.Helper()
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("begin last-release migrations: %v", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if _, err := tx.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS schema_migrations (
+			version    TEXT PRIMARY KEY,
+			checksum_sha256 TEXT,
+			applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+		)`); err != nil {
+		t.Fatalf("create last-release migration history: %v", err)
+	}
+	for _, name := range released {
+		step, ok := upgradeSeedSteps[name]
+		if !ok {
+			t.Fatalf("migration %s has no step in upgradeSeedSteps", name)
+		}
+		sqlBytes, err := migrationsFS.ReadFile("migrations/" + name)
+		if err != nil {
+			t.Fatalf("read migration %s: %v", name, err)
+		}
+		if sum := fmt.Sprintf("%x", sha256.Sum256(sqlBytes)); sum != step.checksum {
+			t.Fatalf("migration %s changed since its release: checksum %s, want %s", name, sum, step.checksum)
+		}
+		if _, err := tx.Exec(ctx, string(sqlBytes)); err != nil {
+			t.Fatalf("apply released migration %s: %v", name, err)
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO schema_migrations (version, checksum_sha256) VALUES ($1, $2)`,
+			name, step.checksum); err != nil {
+			t.Fatalf("record released migration %s: %v", name, err)
+		}
+		if _, err := tx.Exec(ctx, step.seed); err != nil {
+			t.Fatalf("seed step of migration %s: %v", name, err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("commit last-release migrations: %v", err)
+	}
+}
+
+// columnsAddedAfter merges the added columns of the migrations newer than the
+// last release. Two of them adding the same column is a mistake in the steps.
+func columnsAddedAfter(t *testing.T, later []string) map[string]map[string]string {
+	t.Helper()
+	merged := make(map[string]map[string]string)
+	for _, name := range later {
+		for table, columns := range upgradeSeedSteps[name].added {
+			if merged[table] == nil {
+				merged[table] = make(map[string]string)
+			}
+			for column, value := range columns {
+				if _, dup := merged[table][column]; dup {
+					t.Fatalf("upgradeSeedSteps lists %s.%s as added by more than one migration after the last release", table, column)
+				}
+				merged[table][column] = value
+			}
+		}
+	}
+	return merged
 }
 
 // schemaSnapshot holds every row of a schema's tables as to_jsonb column
@@ -515,7 +651,7 @@ func compareSnapshots(t *testing.T, label string, want, got schemaSnapshot, adde
 				}
 				expected, ok := added[table][column]
 				if !ok {
-					t.Errorf("%s: %s.%s was added after v0.4.7-beta; list the value upgraded rows hold in columnsAddedSinceV047Beta (row %s holds %s)",
+					t.Errorf("%s: %s.%s was added after the last release; list the value upgraded rows hold in the added map of its migration in upgradeSeedSteps (row %s holds %s)",
 						label, table, column, key, gotValue)
 					continue
 				}
@@ -527,13 +663,13 @@ func compareSnapshots(t *testing.T, label string, want, got schemaSnapshot, adde
 		}
 		for column := range added[table] {
 			if !addedHere[column] {
-				t.Errorf("%s: columnsAddedSinceV047Beta lists %s.%s, but the migrated rows have no such new column", label, table, column)
+				t.Errorf("%s: upgradeSeedSteps lists %s.%s as added after the last release, but the migrated rows have no such new column", label, table, column)
 			}
 		}
 	}
 	for table := range added {
 		if _, ok := want.rows[table]; !ok {
-			t.Errorf("%s: columnsAddedSinceV047Beta lists table %s, which v0.4.7-beta has no seed rows for", label, table)
+			t.Errorf("%s: upgradeSeedSteps lists table %s as changed after the last release, but the last release has no seed rows for it", label, table)
 		}
 	}
 	for sequence, wantState := range want.sequences {
@@ -553,9 +689,9 @@ func jsonEqual(a, b json.RawMessage) bool {
 	return bytes.Equal(leftJSON, rightJSON)
 }
 
-// checkUpgradedMigrationHistory checks that the v0.4.7-beta records survive
-// unchanged and that Migrate recorded every later migration once.
-func checkUpgradedMigrationHistory(t *testing.T, ctx context.Context, pool *pgxpool.Pool) {
+// checkUpgradedMigrationHistory checks that the last release's records
+// survive unchanged and that Migrate recorded every later migration once.
+func checkUpgradedMigrationHistory(t *testing.T, ctx context.Context, pool *pgxpool.Pool, released []string, total int) {
 	t.Helper()
 	rows, err := pool.Query(ctx, `SELECT version, checksum_sha256 FROM schema_migrations ORDER BY version`)
 	if err != nil {
@@ -569,19 +705,19 @@ func checkUpgradedMigrationHistory(t *testing.T, ctx context.Context, pool *pgxp
 	if err != nil {
 		t.Fatalf("read migration history: %v", err)
 	}
-	if want := currentMigrationCount(t); len(history) != want {
-		t.Fatalf("upgraded migration history has %d records, want %d: %v", len(history), want, history)
+	if len(history) != total {
+		t.Fatalf("upgraded migration history has %d records, want %d: %v", len(history), total, history)
 	}
-	for i, migration := range v047BetaMigrations {
-		if history[i].Version != migration.name || history[i].Checksum != migration.checksum {
-			t.Fatalf("upgraded migration record %d = %v, want v0.4.7-beta's %s %s", i+1, history[i], migration.name, migration.checksum)
+	for i, name := range released {
+		if want := upgradeSeedSteps[name].checksum; history[i].Version != name || history[i].Checksum != want {
+			t.Fatalf("upgraded migration record %d = %v, want the released %s %s", i+1, history[i], name, want)
 		}
 	}
 }
 
-// checkV047BetaDataThroughStore reads seeded rows through the store API, the
+// checkReleaseDataThroughStore reads seeded rows through the store API, the
 // way the upgraded release reads them.
-func checkV047BetaDataThroughStore(t *testing.T, ctx context.Context, st *Store) {
+func checkReleaseDataThroughStore(t *testing.T, ctx context.Context, st *Store) {
 	t.Helper()
 	settings, err := st.GetAppSettings(ctx)
 	if err != nil {
@@ -590,6 +726,13 @@ func checkV047BetaDataThroughStore(t *testing.T, ctx context.Context, st *Store)
 	if !settings.RetentionEnabled || settings.ScanRetentionDays == nil || *settings.ScanRetentionDays != 90 ||
 		!settings.RetentionIncludeAdhoc || settings.UpdatedBy != "zoe.admin@example.com" {
 		t.Errorf("upgraded app settings = %#v, want the seeded 90-day retention", settings)
+	}
+	source, err := st.GetTemplateSyncSource(ctx)
+	if err != nil {
+		t.Fatalf("read upgraded template sync source: %v", err)
+	}
+	if source.Repo != "https://git.example.com/mirror/nuclei-templates.git" || source.Ref != "latest" {
+		t.Errorf("upgraded template sync source = %#v, want the seeded mirror at latest", source)
 	}
 
 	scan, err := st.GetScan(ctx, "cfc3a63a-5eb6-4004-ada1-3d124a6c1781")
@@ -662,7 +805,7 @@ func dumpSchemaWithData(t *testing.T, ctx context.Context, pgDump, dsn, schema, 
 		"--dbname="+dsn,
 	)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("pg_dump v0.4.7-beta schema %s: %v\n%s", schema, err, output)
+		t.Fatalf("pg_dump last-release schema %s: %v\n%s", schema, err, output)
 	}
 
 	// pg_dump 17 and newer always emit SET transaction_timeout, which a
@@ -670,7 +813,7 @@ func dumpSchemaWithData(t *testing.T, ctx context.Context, pgDump, dsn, schema, 
 	// session, so drop it rather than relax ON_ERROR_STOP.
 	dump, err := os.ReadFile(file)
 	if err != nil {
-		t.Fatalf("read v0.4.7-beta dump: %v", err)
+		t.Fatalf("read last-release dump: %v", err)
 	}
 	lines := strings.Split(string(dump), "\n")
 	kept := lines[:0]
@@ -680,7 +823,7 @@ func dumpSchemaWithData(t *testing.T, ctx context.Context, pgDump, dsn, schema, 
 		}
 	}
 	if err := os.WriteFile(file, []byte(strings.Join(kept, "\n")), 0o600); err != nil {
-		t.Fatalf("write v0.4.7-beta dump: %v", err)
+		t.Fatalf("write last-release dump: %v", err)
 	}
 }
 
@@ -695,7 +838,7 @@ func restoreDump(t *testing.T, ctx context.Context, psql, dsn, file string) {
 		"--dbname="+dsn,
 	)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("restore v0.4.7-beta dump: %v\n%s", err, output)
+		t.Fatalf("restore last-release dump: %v\n%s", err, output)
 	}
 }
 

@@ -42,11 +42,16 @@ NSC_TEST_DATABASE_URL='postgres://nuclei:***@localhost:5432/nuclei?sslmode=disab
 
 The schema-upgrade tests need the PostgreSQL client. Install `pg_dump` and `psql`, put them on
 `PATH`, or set `NSC_TEST_PG_DUMP=/path/to/pg_dump` and `NSC_TEST_PSQL=/path/to/psql` (a `psql`
-next to `pg_dump` is found on its own). `TestUpgradeFromV047BetaPostgres` builds a v0.4.7-beta
-database from migrations 0001 to 0005 (release commit `2252888`), fills it with synthetic rows,
-dumps and restores it, runs `Migrate`, and checks the schema against a fresh install and every row
-against the seed. A migration that adds a column to a seeded table lists the value upgraded rows
-hold in `columnsAddedSinceV047Beta`.
+next to `pg_dump` is found on its own). `TestUpgradeFromLastReleasePostgres` (in
+`internal/store/upgrade_integration_test.go`) builds the database of the last release: it applies
+migrations 1 to `lastReleaseMigration`, each followed by its seed step of synthetic rows, dumps and
+restores it, runs `Migrate`, and checks the schema against a fresh install and every row against
+the seed. `upgradeSeedSteps` holds one step per migration: its checksum, its seed step, which uses
+only the tables and columns that exist at that point, and the value rows written before it hold in
+each column it adds. `TestEveryMigrationHasUpgradeSeedStep` needs no database and fails when a
+migration has no step or no longer matches its checksum, so every migration pull request brings its
+own step. When a release ships a migration the previous one did not, raise `lastReleaseMigration` to
+the number of migrations it ships.
 
 ## Full local stack
 
