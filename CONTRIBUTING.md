@@ -128,6 +128,10 @@ Each schema change goes in a **new numbered SQL file** under `internal/store/mig
 `schema_migrations`. To fix a mistake in an applied migration, add a separately named
 forward/repair migration instead of editing. Migration SQL must be transaction-compatible
 (no `CREATE INDEX CONCURRENTLY` — see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)).
+Each new migration also adds its step to `upgradeSeedSteps` in
+`internal/store/upgrade_integration_test.go`: its checksum, synthetic seed rows for what it adds, and
+the value existing rows hold in each column it adds (see
+[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#database-migrations)).
 Unknown applied versions mean the database was migrated by a newer release — run that
 release or newer. If you're unsure, ask in the issue.
 
