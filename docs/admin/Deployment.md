@@ -22,7 +22,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Compose passes `VERSION_TAG` and `GIT_COMMIT` into the backend image. Leave
+Compose passes `VERSION_TAG` and `GIT_COMMIT` into the backend and scanner images. Leave
 `VERSION_TAG` unset locally so the account menu shows `dev` plus the commit. When
 `GIT_COMMIT` is unset, the image reads this checkout's HEAD. Set it when the tree
 has no checkout identity (a linked worktree, for example):

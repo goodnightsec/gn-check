@@ -71,6 +71,11 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
+          # GitHub's license detection reports AGPL-3.0; the project is licensed
+          # AGPL-3.0-or-later (README.md, License). A custom label
+          # replaces the generated one with the same key.
+          labels: |
+            org.opencontainers.image.licenses=AGPL-3.0-or-later
 
       - name: Build and push
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -82,8 +87,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           # Tag builds only (on.push.tags). ref_name is the git tag, including
-          # the leading v; sha is the full commit. The scanner image ignores
-          # these args. An unstamped build must not invent a release tag.
+          # the leading v; sha is the full commit. Both images stamp them into
+          # their binary. An unstamped build must not invent a release tag.
           build-args: |
             VERSION_TAG=${{ github.ref_name }}
             GIT_COMMIT=${{ github.sha }}

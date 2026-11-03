@@ -1,11 +1,12 @@
-// Package version is the backend build identity stamped into the binary.
+// Package version is the build identity stamped into the backend and scanner
+// binaries.
 //
-// Release images set versionTag and gitCommit with -ldflags. Those values are
-// empty for a local go build or an unstamped image; Current then uses the
-// VCS revision the toolchain embedded, when it has one. A tag is only legitimate
-// when the build was actually cut from it, so it is never taken from Go's
-// module version. Go reports untagged checkouts as "(devel)", and that
-// pseudo-version must not surface in the API, logs, or UI.
+// Release images set versionTag and gitCommit with -ldflags, the same way for
+// both binaries. Those values are empty for a local go build or an unstamped
+// image; Current then uses the VCS revision the toolchain embedded, when it has
+// one. A tag is only legitimate when the build was actually cut from it, so it
+// is never taken from Go's module version. Go reports untagged checkouts as
+// "(devel)", and that pseudo-version must not surface in the API, logs, or UI.
 package version
 
 import (
@@ -28,7 +29,8 @@ const (
 	shortLen      = 7
 )
 
-// Info is the build identity returned by GET /api/version and logged at startup.
+// Info is the build identity returned by GET /api/version and logged at startup
+// by the backend and the scanner.
 // Tag is empty when the build was not cut from a tag. Commit is the full SHA,
 // or empty when none is available. Version is the display string.
 type Info struct {

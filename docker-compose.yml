@@ -81,6 +81,10 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.scanner
+      args:
+        # Stamped the same way as the backend image below.
+        VERSION_TAG: ${VERSION_TAG:-}
+        GIT_COMMIT: ${GIT_COMMIT:-}
     environment:
       SCANNER_ADDR: ":8081"
       SCANNER_TOKEN: "${SCANNER_TOKEN:-dev-scanner-token-change-me-0123456789ab}"

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/goodnightsec/gn-check/internal/scanner"
+	"github.com/goodnightsec/gn-check/internal/version"
 )
 
 func main() {
@@ -68,8 +69,10 @@ func main() {
 	}
 
 	go func() {
+		build := version.Current()
 		log.Info("scanner node listening", "addr", addr, "nuclei", nucleiPath,
-			"tls", tlsCfg != nil, "mtls", scanner.RequiresClientCert(tlsCfg))
+			"tls", tlsCfg != nil, "mtls", scanner.RequiresClientCert(tlsCfg),
+			"version", build.Version, "tag", build.Tag, "commit", build.Commit)
 		var err error
 		if tlsCfg != nil {
 			// Certs live in TLSConfig, so the file args are empty.
