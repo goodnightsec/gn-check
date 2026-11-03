@@ -13,6 +13,10 @@ commit, or click it to copy the commit. `GET /api/version` and the `version` / `
 string keeps the git tag's leading `v`; GHCR image tags strip it (`v0.5.0` is pulled as
 `0.5.0`).
 
+A scanner node reports its own build the same way: the startup `scanner node listening` log
+has `version`, `tag` and `commit` fields, stamped like the backend's. A node built from a
+different commit than the backend shows a different commit there.
+
 | Symptom | Meaning / action |
 |---|---|
 | Backend reports unsupported migration versions | The database was migrated by a newer release than this binary. Run that release or newer. |
