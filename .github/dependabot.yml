@@ -47,3 +47,13 @@ updates:
     groups:
       docker-images:
         patterns: ["*"]
+
+  # Images pinned in the root Compose stack (postgres, Garage, Keycloak)
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "docker"]
+    groups:
+      compose:
+        patterns: ["*"]
