@@ -84,11 +84,7 @@ export function collapseSyncRuns<T extends SyncRunSummaryInput>(runs: T[]): Sync
 }
 
 /** Result cell for one history row — a single run, or a collapsed group of them. */
-export function formatSyncRunRow(
-  run: SyncRunSummaryInput,
-  count: number,
-  lastChecked: string,
-): SyncRunSummaryView {
+export function formatSyncRunRow(run: SyncRunSummaryInput, count: number, lastChecked: string): SyncRunSummaryView {
   const view = formatSyncRunResult(run);
   if (count <= 1) return view;
   const suffix = `×${count}, last checked ${lastChecked}`;

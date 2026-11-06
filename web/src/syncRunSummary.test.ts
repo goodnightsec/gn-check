@@ -62,9 +62,7 @@ describe("formatSyncRunResult", () => {
       ref_before: "a1b2c3d4e5f67890aaaa",
       ref_after: "e4f5a6b7c8d9e0f1bbbb",
     });
-    expect(view.text).toBe(
-      "No changes · a1b2c3d4e5f6 → e4f5a6b7c8d9 · 7 malformed files skipped",
-    );
+    expect(view.text).toBe("No changes · a1b2c3d4e5f6 → e4f5a6b7c8d9 · 7 malformed files skipped");
   });
 
   it("uses singular wording for one malformed file", () => {
@@ -77,9 +75,7 @@ describe("formatSyncRunResult", () => {
       ref_before: "aaaaaaaaaaaaaaaa",
       ref_after: "bbbbbbbbbbbbbbbb",
     });
-    expect(view.text).toBe(
-      "No changes · aaaaaaaaaaaa → bbbbbbbbbbbb · 1 malformed file skipped",
-    );
+    expect(view.text).toBe("No changes · aaaaaaaaaaaa → bbbbbbbbbbbb · 1 malformed file skipped");
   });
 
   it("keeps the per-action breakdown when the catalog changed", () => {
@@ -277,11 +273,7 @@ describe("formatSyncRunRow", () => {
 
   it("appends the run count and last-checked time for a collapsed group", () => {
     const view = formatSyncRunRow(run("grouped"), 36, "10/1/2026, 6:37 PM");
-    expect(view.text).toBe(
-      "No changes · aaaaaaaaaaaa → aaaaaaaaaaaa · ×36, last checked 10/1/2026, 6:37 PM",
-    );
-    expect(view.title).toBe(
-      "aaaaaaaaaaaaaaaa → aaaaaaaaaaaaaaaa · ×36, last checked 10/1/2026, 6:37 PM",
-    );
+    expect(view.text).toBe("No changes · aaaaaaaaaaaa → aaaaaaaaaaaa · ×36, last checked 10/1/2026, 6:37 PM");
+    expect(view.title).toBe("aaaaaaaaaaaaaaaa → aaaaaaaaaaaaaaaa · ×36, last checked 10/1/2026, 6:37 PM");
   });
 });

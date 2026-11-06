@@ -107,11 +107,16 @@ function TriagePanel({ f }: { f: FindingDetail }) {
           <FindingStateBadge state={f.effective_state} />
           <span className="text-xs text-neutral-500">
             detection:{" "}
-            <span className="font-medium text-neutral-700 dark:text-neutral-300">{STATE_LABELS[f.detection_state]}</span>
+            <span className="font-medium text-neutral-700 dark:text-neutral-300">
+              {STATE_LABELS[f.detection_state]}
+            </span>
           </span>
           {f.times_mitigated > 0 && <Pill tone="warn">mitigated ×{f.times_mitigated}</Pill>}
           {!f.auto_mitigation_eligible && (
-            <Pill tone="warn" title="This finding has no network host:port. Scan absence cannot automatically mark it mitigated.">
+            <Pill
+              tone="warn"
+              title="This finding has no network host:port. Scan absence cannot automatically mark it mitigated."
+            >
               auto-mitigation unavailable
             </Pill>
           )}
@@ -162,7 +167,12 @@ function TriagePanel({ f }: { f: FindingDetail }) {
                 </Field>
               )}
               <Field label="Note">
-                <Input value={dispNote} onChange={(e) => setDispNote(e.target.value)} placeholder="Optional" className="w-full" />
+                <Input
+                  value={dispNote}
+                  onChange={(e) => setDispNote(e.target.value)}
+                  placeholder="Optional"
+                  className="w-full"
+                />
               </Field>
               {dispMut.isError && <ErrorText error={dispMut.error} />}
               <Button variant="primary" disabled={!dispDirty || dispMut.isPending} onClick={() => dispMut.mutate()}>
@@ -182,10 +192,19 @@ function TriagePanel({ f }: { f: FindingDetail }) {
                 </Select>
               </Field>
               <Field label="Note">
-                <Input value={recastNote} onChange={(e) => setRecastNote(e.target.value)} placeholder="Optional" className="w-full" />
+                <Input
+                  value={recastNote}
+                  onChange={(e) => setRecastNote(e.target.value)}
+                  placeholder="Optional"
+                  className="w-full"
+                />
               </Field>
               {recastMut.isError && <ErrorText error={recastMut.error} />}
-              <Button variant="primary" disabled={!recastDirty || recastMut.isPending} onClick={() => recastMut.mutate()}>
+              <Button
+                variant="primary"
+                disabled={!recastDirty || recastMut.isPending}
+                onClick={() => recastMut.mutate()}
+              >
                 {recastMut.isPending ? "Saving…" : recast ? "Save recast" : "Clear recast"}
               </Button>
             </Card>
@@ -259,10 +278,7 @@ export function FindingDetailPage() {
             {f.latest_occurrence_id != null && (
               <>
                 {" "}
-                <Link
-                  to={`/occurrences/${f.latest_occurrence_id}`}
-                  className={linkClass}
-                >
+                <Link to={`/occurrences/${f.latest_occurrence_id}`} className={linkClass}>
                   latest
                 </Link>
               </>
@@ -374,7 +390,11 @@ export function FindingDetailPage() {
                         )}
                       </Td>
                       <Td>
-                        <Link to={`/scans/${row.scan_id}`} title={row.scan_id} className={`font-mono text-xs ${linkClass}`}>
+                        <Link
+                          to={`/scans/${row.scan_id}`}
+                          title={row.scan_id}
+                          className={`font-mono text-xs ${linkClass}`}
+                        >
                           {row.scan_id.slice(0, 8)}
                         </Link>
                       </Td>
@@ -455,9 +475,7 @@ export function FindingDetailPage() {
             <Meta label="CWE">
               <TagList items={cls["cwe-id"]} />
             </Meta>
-            <Meta label="CVSS">
-              {cls["cvss-score"] != null ? `${cls["cvss-score"]}` : "—"}
-            </Meta>
+            <Meta label="CVSS">{cls["cvss-score"] != null ? `${cls["cvss-score"]}` : "—"}</Meta>
             <Meta label="CVSS vector">
               <span className="font-mono text-xs">{cls["cvss-metrics"] || "—"}</span>
             </Meta>
@@ -510,12 +528,7 @@ export function FindingDetailPage() {
               return (
                 <li key={r}>
                   {href ? (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`break-all ${linkClass}`}
-                    >
+                    <a href={href} target="_blank" rel="noreferrer" className={`break-all ${linkClass}`}>
                       {r}
                     </a>
                   ) : (
@@ -537,7 +550,9 @@ export function FindingDetailPage() {
       {f.raw && (
         <Section title="Raw finding">
           <details>
-            <summary className="cursor-pointer text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200">Show raw JSON</summary>
+            <summary className="cursor-pointer text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200">
+              Show raw JSON
+            </summary>
             <div className="mt-2">
               <CodeBlock text={JSON.stringify(f.raw, null, 2)} />
             </div>

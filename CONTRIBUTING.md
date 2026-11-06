@@ -89,7 +89,7 @@ gofmt -l .            # must print nothing (fix with gofmt -w)
 go vet ./...
 go build ./...
 go test ./...         # fast local path — store/backend integration tests skip without NSC_TEST_DATABASE_URL
-cd web && npm test && npm run build   # unit tests + tsc -b + vite build
+cd web && npm run lint && npm test && npm run build   # prettier --check + unit tests + tsc -b + vite build
 ```
 
 CI is stricter than the local path above. It always sets `NSC_TEST_DATABASE_URL`

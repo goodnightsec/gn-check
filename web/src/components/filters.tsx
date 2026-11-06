@@ -26,8 +26,7 @@ export function MultiSelect({
   onChange: (next: string[]) => void;
   className?: string;
 }) {
-  const toggle = (v: string) =>
-    onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
+  const toggle = (v: string) => onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
 
   return (
     <DropdownMenu.Root>
@@ -62,10 +61,7 @@ export function MultiSelect({
           {selected.length > 0 && (
             <>
               <DropdownMenu.Separator className={menuSeparatorClass} />
-              <DropdownMenu.Item
-                onSelect={() => onChange([])}
-                className={cn(itemCls, "text-neutral-500")}
-              >
+              <DropdownMenu.Item onSelect={() => onChange([])} className={cn(itemCls, "text-neutral-500")}>
                 Clear
               </DropdownMenu.Item>
             </>
@@ -112,7 +108,7 @@ export function TokenInput({
     <div
       className={cn(
         "flex min-h-9 flex-wrap items-center gap-1 rounded-md border border-neutral-300 bg-white px-1.5 py-1 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 dark:border-neutral-700 dark:bg-neutral-800",
-        className,
+        className
       )}
     >
       {values.map((v, i) => (

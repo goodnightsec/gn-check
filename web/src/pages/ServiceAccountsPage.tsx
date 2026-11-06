@@ -68,8 +68,8 @@ function TokenReveal({ result, onClose }: { result: ServiceAccountWithToken; onC
     <Modal open dismissible={false} onOpenChange={() => {}} title={`Token for “${result.name}”`}>
       <div className="space-y-4">
         <Alert tone="warning">
-          Copy this token now — it is shown <strong>once</strong> and cannot be retrieved
-          afterwards. If you lose it, rotate the account to mint a new one.
+          Copy this token now — it is shown <strong>once</strong> and cannot be retrieved afterwards. If you lose it,
+          rotate the account to mint a new one.
         </Alert>
 
         <div className="break-all rounded-md border border-neutral-300 bg-neutral-50 p-3 font-mono text-sm select-all dark:border-neutral-700 dark:bg-neutral-800">
@@ -102,20 +102,13 @@ function TokenReveal({ result, onClose }: { result: ServiceAccountWithToken; onC
 }
 
 /** CreateModal mints a new service account. */
-function CreateModal({
-  onCreated,
-  onClose,
-}: {
-  onCreated: (r: ServiceAccountWithToken) => void;
-  onClose: () => void;
-}) {
+function CreateModal({ onCreated, onClose }: { onCreated: (r: ServiceAccountWithToken) => void; onClose: () => void }) {
   const [name, setName] = useState("");
   const [role, setRole] = useState<string>("viewer");
   const [ttl, setTtl] = useState(String(DEFAULT_TOKEN_TTL_DAYS));
 
   const create = useMutation({
-    mutationFn: () =>
-      api.createServiceAccount({ name: name.trim(), role, ttl_days: Number(ttl) }),
+    mutationFn: () => api.createServiceAccount({ name: name.trim(), role, ttl_days: Number(ttl) }),
     onSuccess: onCreated,
   });
 
@@ -151,7 +144,11 @@ function CreateModal({
           </Select>
         </Field>
 
-        <Field label="Expires in (days)" hint="0 for no expiry." error={ttlInvalid && "Enter a whole number of days (0 or more)."}>
+        <Field
+          label="Expires in (days)"
+          hint="0 for no expiry."
+          error={ttlInvalid && "Enter a whole number of days (0 or more)."}
+        >
           <Input
             type="number"
             min={0}
@@ -255,7 +252,13 @@ export function ServiceAccountsPage() {
                   <Td className="font-mono text-xs text-neutral-600 dark:text-neutral-400">{sa.token_prefix}…</Td>
                   <Td className="whitespace-nowrap text-neutral-500">{fmtTime(sa.created_at)}</Td>
                   <Td className="whitespace-nowrap text-neutral-500">
-                    {isExpired(sa) ? <Badge tone="danger">expired</Badge> : sa.expires_at ? fmtTime(sa.expires_at) : "never"}
+                    {isExpired(sa) ? (
+                      <Badge tone="danger">expired</Badge>
+                    ) : sa.expires_at ? (
+                      fmtTime(sa.expires_at)
+                    ) : (
+                      "never"
+                    )}
                   </Td>
                   <Td className="whitespace-nowrap text-neutral-500">{fmtTime(sa.last_used_at)}</Td>
                   <RowActions
@@ -284,7 +287,8 @@ export function ServiceAccountsPage() {
                           if (
                             await confirm({
                               title: `Revoke “${sa.name}”?`,
-                              description: "Its token stops working immediately and anything using it will start failing.",
+                              description:
+                                "Its token stops working immediately and anything using it will start failing.",
                               confirmLabel: "Revoke",
                             })
                           )

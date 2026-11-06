@@ -24,5 +24,5 @@ createRoot(document.getElementById("root")!).render(
         </ConfirmProvider>
       </BrowserRouter>
     </QueryClientProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

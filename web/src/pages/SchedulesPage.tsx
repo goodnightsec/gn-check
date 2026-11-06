@@ -39,9 +39,7 @@ const CRON_PRESETS: { label: string; cron: string }[] = [
 
 function ianaTimezones(): string[] {
   const supported =
-    typeof Intl !== "undefined" && "supportedValuesOf" in Intl
-      ? Intl.supportedValuesOf("timeZone")
-      : [];
+    typeof Intl !== "undefined" && "supportedValuesOf" in Intl ? Intl.supportedValuesOf("timeZone") : [];
   return Array.from(new Set(["UTC", ...supported])).sort((a, b) => a.localeCompare(b));
 }
 
@@ -68,7 +66,10 @@ function fmtInZone(iso: string | undefined, timeZone: string): string {
 
 /** Fold spaces and underscores so "new york" matches America/New_York. */
 function normalizeTzSearch(s: string): string {
-  return s.trim().toLowerCase().replace(/[\s_]+/g, " ");
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, " ");
 }
 
 function TimezoneField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -198,9 +199,7 @@ function TimezoneField({ value, onChange }: { value: string; onChange: (v: strin
                 aria-selected={z === value}
                 className={
                   "cursor-pointer px-3 py-1.5 font-mono " +
-                  (i === active
-                    ? "bg-indigo-600 text-white"
-                    : "hover:bg-neutral-100 dark:hover:bg-neutral-700")
+                  (i === active ? "bg-indigo-600 text-white" : "hover:bg-neutral-100 dark:hover:bg-neutral-700")
                 }
                 onMouseEnter={() => setActive(i)}
                 onClick={() => pick(z)}
@@ -231,7 +230,7 @@ function ScheduleModal({
   const targets = useQuery({ queryKey: ["targets"], queryFn: () => api.listTargets() });
 
   const [name, setName] = useState(
-    existing ? (duplicate ? duplicateName(existing.name, existingNames) : existing.name) : "",
+    existing ? (duplicate ? duplicateName(existing.name, existingNames) : existing.name) : ""
   );
   const [scanPolicyId, setScanPolicyId] = useState(existing?.scan_policy_id ?? "");
   const [targetId, setTargetId] = useState(existing?.target_id ?? "");
@@ -298,7 +297,12 @@ function ScheduleModal({
           <FormHint tone="warning">No approved targets yet — create one under Targets first.</FormHint>
         )}
         <Field label="Cron" required hint="minute hour day-of-month month day-of-week">
-          <Input value={cron} onChange={(e) => setCron(e.target.value)} placeholder="0 3 * * *" className="w-full font-mono" />
+          <Input
+            value={cron}
+            onChange={(e) => setCron(e.target.value)}
+            placeholder="0 3 * * *"
+            className="w-full font-mono"
+          />
         </Field>
         <div className="-mt-2 flex flex-wrap gap-1.5" aria-label="Cron presets">
           {CRON_PRESETS.map((p) => (
@@ -311,8 +315,8 @@ function ScheduleModal({
           <span className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">Timezone</span>
           <TimezoneField value={timezone} onChange={setTimezone} />
           <FormHint>
-            Cron clock fields fire in this IANA zone (DST from the timezone database). New schedules
-            default to the browser timezone; omit on the API for UTC.
+            Cron clock fields fire in this IANA zone (DST from the timezone database). New schedules default to the
+            browser timezone; omit on the API for UTC.
           </FormHint>
         </div>
         <Checkbox
@@ -412,9 +416,15 @@ export function SchedulesPage() {
               {(q.data ?? []).map((s) => (
                 <TRow key={s.id}>
                   <Td className="whitespace-nowrap font-medium">{s.name}</Td>
-                  <Td className="whitespace-nowrap text-neutral-600 dark:text-neutral-400">{policyName(s.scan_policy_id)}</Td>
-                  <Td className="whitespace-nowrap text-neutral-600 dark:text-neutral-400">{targetName(s.target_id)}</Td>
-                  <Td className="whitespace-nowrap font-mono text-xs text-neutral-600 dark:text-neutral-400">{s.cron}</Td>
+                  <Td className="whitespace-nowrap text-neutral-600 dark:text-neutral-400">
+                    {policyName(s.scan_policy_id)}
+                  </Td>
+                  <Td className="whitespace-nowrap text-neutral-600 dark:text-neutral-400">
+                    {targetName(s.target_id)}
+                  </Td>
+                  <Td className="whitespace-nowrap font-mono text-xs text-neutral-600 dark:text-neutral-400">
+                    {s.cron}
+                  </Td>
                   <Td className="font-mono text-xs text-neutral-600 dark:text-neutral-400">{s.timezone || "UTC"}</Td>
                   <Td>{s.enabled ? <Badge tone="success">enabled</Badge> : <Badge>disabled</Badge>}</Td>
                   <Td className="text-xs text-neutral-500">

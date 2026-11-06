@@ -86,7 +86,10 @@ function EnvConfigTable({ variables }: { variables: EnvVariable[] }) {
                   </div>
                 </Td>
                 <Td className="text-neutral-500">{v.set ? "set" : "unset"}</Td>
-                <Td className="truncate font-mono text-xs text-neutral-700 dark:text-neutral-300" title={effectiveDisplay(v)}>
+                <Td
+                  className="truncate font-mono text-xs text-neutral-700 dark:text-neutral-300"
+                  title={effectiveDisplay(v)}
+                >
                   {effectiveDisplay(v)}
                 </Td>
                 <Td className="truncate font-mono text-xs text-neutral-500" title={v.default || "—"}>
@@ -112,7 +115,10 @@ function EnvVarInfo({ name, description }: { name: string; description: string }
           type="button"
           aria-label={`About ${name}`}
           aria-expanded={open}
-          className={cn("shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200", focusRing)}
+          className={cn(
+            "shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200",
+            focusRing
+          )}
           onPointerDown={(e) => {
             lastPointerType.current = e.pointerType;
           }}
@@ -209,8 +215,8 @@ export function SettingsPage() {
           description={
             <>
               Automatically delete scans (and their findings occurrences and archived output) older than a set number of
-              days. Each target&apos;s most recent scan is always kept. Deletion is evidence-preserving — a finding&apos;s
-              lifecycle is recomputed from the scans that remain.
+              days. Each target&apos;s most recent scan is always kept. Deletion is evidence-preserving — a
+              finding&apos;s lifecycle is recomputed from the scans that remain.
             </>
           }
         >
