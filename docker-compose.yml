@@ -2,7 +2,7 @@ name: gn-check
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: nuclei
       POSTGRES_PASSWORD: nuclei
@@ -58,7 +58,7 @@ services:
   # (admin/operator/viewer, password = username). Browser reaches it at
   # localhost:8082; the backend reaches it in-network at keycloak:8080.
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0
+    image: quay.io/keycloak/keycloak:26.8
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
