@@ -1,7 +1,8 @@
 # Dependabot keeps dependencies patched across every ecosystem in the repo.
-# Weekly cadence; minor/patch bumps are grouped into one PR per ecosystem to
-# cut review noise, while majors come as individual PRs so they get scrutiny.
-# Security updates are raised regardless of schedule.
+# Weekly cadence; minor and patch bumps are grouped into one PR per ecosystem
+# to cut review noise. Major versions are ignored: they need a deliberate
+# upgrade with its own review and tests. Security updates are raised
+# regardless of schedule.
 version: 2
 updates:
   # Backend + scanner Go modules
@@ -15,6 +16,9 @@ updates:
       go-minor-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # React SPA (web/)
   - package-ecosystem: "npm"
@@ -27,6 +31,9 @@ updates:
       npm-minor-patch:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # GitHub Actions used by the CI + release workflows
   - package-ecosystem: "github-actions"
@@ -37,6 +44,9 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # Base images for the backend + scanner containers
   - package-ecosystem: "docker"
@@ -47,6 +57,9 @@ updates:
     groups:
       docker-images:
         patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # Images pinned in the root Compose stack (postgres, Garage, Keycloak)
   - package-ecosystem: "docker-compose"
@@ -57,3 +70,6 @@ updates:
     groups:
       compose:
         patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
