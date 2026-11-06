@@ -1018,7 +1018,16 @@ export const api = {
     retention_include_adhoc: boolean;
   }) => request<AppSettings>("PUT", "/api/settings", body),
 
-  listScans: () => request<Scan[]>("GET", "/api/scans"),
+  listScans: (q: { q?: string; started_from?: string; started_to?: string; limit?: number; offset?: number } = {}) => {
+    const p = new URLSearchParams();
+    if (q.q) p.set("q", q.q);
+    if (q.started_from) p.set("started_from", q.started_from);
+    if (q.started_to) p.set("started_to", q.started_to);
+    if (q.limit != null) p.set("limit", String(q.limit));
+    if (q.offset != null) p.set("offset", String(q.offset));
+    const qs = p.toString();
+    return request<Page<Scan>>("GET", qs ? `/api/scans?${qs}` : "/api/scans");
+  },
   getScan: (id: string) => request<Scan>("GET", `/api/scans/${id}`),
   createScan: (body: { scan_policy_id: string; target_id: string }) =>
     request<{ scan_id: string }>("POST", "/api/scans", body),

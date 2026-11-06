@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api";
 import { hasRole, useMe } from "../auth";
 import {
@@ -9,10 +9,12 @@ import {
   ErrorText,
   Field,
   FormHint,
+  Input,
   linkClass,
   Modal,
   ModalActions,
   Muted,
+  OffsetPager,
   Page,
   PageHeader,
   ProgressBar,
@@ -29,6 +31,8 @@ import {
   useConfirm,
 } from "../components/ui";
 import { ImportBundleModal } from "./ImportBundleModal";
+
+const PAGE_SIZE = 50;
 
 function RunScanModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate();
@@ -107,6 +111,24 @@ function RunScanModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** Convert a datetime-local value (no zone) to an RFC 3339 UTC instant for the API. */
+function localInputToRFC3339(local: string): string | undefined {
+  const v = local.trim();
+  if (!v) return undefined;
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return d.toISOString();
+}
+
+/** Convert an RFC 3339 query value back to datetime-local (local wall time). */
+function rfc3339ToLocalInput(rfc: string | null): string {
+  if (!rfc) return "";
+  const d = new Date(rfc);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function ScansPage() {
   const me = useMe();
   const canRun = hasRole(me.data ?? undefined, "operator");
@@ -117,20 +139,94 @@ export function ScansPage() {
   const [importOpen, setImportOpen] = useState(false);
   const qc = useQueryClient();
   const confirm = useConfirm();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const qParam = searchParams.get("q") ?? "";
+  const fromParam = searchParams.get("started_from") ?? "";
+  const toParam = searchParams.get("started_to") ?? "";
+  const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
+
+  // Local draft for the name box so typing doesn't hit the API every keystroke.
+  const [nameDraft, setNameDraft] = useState(qParam);
+  const [fromDraft, setFromDraft] = useState(() => rfc3339ToLocalInput(fromParam || null));
+  const [toDraft, setToDraft] = useState(() => rfc3339ToLocalInput(toParam || null));
+
+  useEffect(() => {
+    setNameDraft(qParam);
+    setFromDraft(rfc3339ToLocalInput(fromParam || null));
+    setToDraft(rfc3339ToLocalInput(toParam || null));
+  }, [qParam, fromParam, toParam]);
+
+  const applyFilters = useCallback(
+    (next: { q?: string; started_from?: string; started_to?: string; offset?: number }) => {
+      const p = new URLSearchParams();
+      const q = (next.q ?? qParam).trim();
+      const from = next.started_from ?? fromParam;
+      const to = next.started_to ?? toParam;
+      const off = next.offset ?? offset;
+      if (q) p.set("q", q);
+      if (from) p.set("started_from", from);
+      if (to) p.set("started_to", to);
+      if (off > 0) p.set("offset", String(off));
+      setSearchParams(p, { replace: true });
+    },
+    [qParam, fromParam, toParam, offset, setSearchParams]
+  );
+
+  // Debounce name search into the URL (resets offset).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (nameDraft.trim() === qParam.trim()) return;
+      applyFilters({ q: nameDraft, offset: 0 });
+    }, 300);
+    return () => clearTimeout(t);
+  }, [nameDraft, qParam, applyFilters]);
+
+  const listQuery = useMemo(
+    () => ({
+      q: qParam.trim() || undefined,
+      started_from: fromParam || undefined,
+      started_to: toParam || undefined,
+      limit: PAGE_SIZE,
+      offset,
+    }),
+    [qParam, fromParam, toParam, offset]
+  );
 
   const scans = useQuery({
-    queryKey: ["scans"],
-    queryFn: () => api.listScans(),
+    queryKey: ["scans", listQuery],
+    queryFn: () => api.listScans(listQuery),
+    // Re-poll the current page only; filters and offset stay put.
     refetchInterval: (q) => {
-      const active = (q.state.data ?? []).some((s) => s.state === "queued" || s.state === "running");
+      const active = (q.state.data?.items ?? []).some((s) => s.state === "queued" || s.state === "running");
       return active ? 2000 : false;
     },
   });
+
+  const items = scans.data?.items ?? [];
+  const total = scans.data?.total ?? 0;
 
   const invalidate = () => void qc.invalidateQueries({ queryKey: ["scans"] });
   const cancel = useMutation({ mutationFn: (id: string) => api.cancelScan(id), onSuccess: invalidate });
   const del = useMutation({ mutationFn: (id: string) => api.deleteScan(id), onSuccess: invalidate });
   const colCount = 7 + (showActions ? 1 : 0);
+
+  const onApplyTime = () => {
+    applyFilters({
+      started_from: localInputToRFC3339(fromDraft) ?? "",
+      started_to: localInputToRFC3339(toDraft) ?? "",
+      offset: 0,
+    });
+  };
+
+  const onClearFilters = () => {
+    setNameDraft("");
+    setFromDraft("");
+    setToDraft("");
+    setSearchParams({}, { replace: true });
+  };
+
+  const hasFilters = !!(qParam || fromParam || toParam);
 
   return (
     <Page>
@@ -149,6 +245,44 @@ export function ScansPage() {
         }
       />
 
+      <Card className="space-y-3 p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <Field label="Name" className="min-w-[14rem] flex-1">
+            <Input
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              placeholder="Target, policy, schedule, or scan ID…"
+              aria-label="Filter scans by name"
+              className="w-full"
+            />
+          </Field>
+          <Field label="Started from">
+            <Input
+              type="datetime-local"
+              value={fromDraft}
+              onChange={(e) => setFromDraft(e.target.value)}
+              aria-label="Started from"
+            />
+          </Field>
+          <Field label="Started to">
+            <Input
+              type="datetime-local"
+              value={toDraft}
+              onChange={(e) => setToDraft(e.target.value)}
+              aria-label="Started to"
+            />
+          </Field>
+          <div className="flex gap-2 pb-0.5">
+            <Button onClick={onApplyTime}>Apply time</Button>
+            {hasFilters && <Button onClick={onClearFilters}>Clear</Button>}
+          </div>
+        </div>
+        <FormHint>
+          Filters and page are kept in the URL. Name matches target, scan policy, and schedule names, or a scan-ID
+          prefix. Start-time bounds are inclusive; queued scans without a start time use their queue time.
+        </FormHint>
+      </Card>
+
       {(cancel.isError || del.isError) && <ErrorText error={cancel.error ?? del.error} />}
 
       {scans.isLoading ? (
@@ -156,106 +290,124 @@ export function ScansPage() {
       ) : scans.isError ? (
         <ErrorText error={scans.error} />
       ) : (
-        <Card>
-          <Table>
-            <THead>
-              <Th>Scan</Th>
-              <Th>Target</Th>
-              <Th>Node</Th>
-              <Th>State</Th>
-              <Th>Started</Th>
-              <Th>Finished</Th>
-              <Th>Nuclei</Th>
-              {showActions && <Th aria-label="Actions" />}
-            </THead>
-            <tbody>
-              {(scans.data ?? []).map((s) => {
-                const active = s.state === "queued" || s.state === "running";
-                const short = s.id.slice(0, 8);
-                return (
-                  <TRow key={s.id}>
-                    <Td>
-                      <Link to={`/scans/${s.id}`} className={`font-mono text-xs ${linkClass}`}>
-                        {short}
-                      </Link>
-                    </Td>
-                    <Td>
-                      {s.target_name ? (
-                        <span>
-                          {s.target_name}
-                          {s.target_host_count ? (
-                            <span className="text-neutral-400">
-                              {" "}
-                              ({s.target_host_count} host{s.target_host_count === 1 ? "" : "s"})
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : (
-                        <Muted>ad-hoc</Muted>
-                      )}
-                    </Td>
-                    <Td className="text-neutral-600 dark:text-neutral-300">{s.node_name || <Muted />}</Td>
-                    <Td>
-                      <StateBadge state={s.state} />
-                      {s.state === "running" && s.progress && (
-                        <div className="mt-1 w-40">
-                          <ProgressBar percent={s.progress.percent} />
-                        </div>
-                      )}
-                    </Td>
-                    <Td className="whitespace-nowrap text-neutral-500">{new Date(s.created_at).toLocaleString()}</Td>
-                    <Td className="whitespace-nowrap text-neutral-500">
-                      {s.finished_at ? new Date(s.finished_at).toLocaleString() : <Muted />}
-                    </Td>
-                    <Td className="font-mono text-xs text-neutral-500">{s.nuclei_version || <Muted />}</Td>
-                    {showActions && (
-                      <RowActions
-                        label={`scan ${short}`}
-                        actions={[
-                          {
-                            label: "Stop",
-                            primary: true,
-                            hidden: !canCancel || !active,
-                            disabled: cancel.isPending,
-                            onSelect: async () => {
-                              if (
-                                await confirm({
-                                  title: `Stop scan ${short}?`,
-                                  description:
-                                    "The scanner node cancels the run. Results collected so far are not ingested.",
-                                  confirmLabel: "Stop scan",
-                                })
-                              )
-                                cancel.mutate(s.id);
+        <div className="space-y-3">
+          <OffsetPager
+            offset={offset}
+            total={total}
+            pageSize={PAGE_SIZE}
+            onChange={(o) => applyFilters({ offset: o })}
+          />
+          <Card>
+            <Table>
+              <THead>
+                <Th>Scan</Th>
+                <Th>Target</Th>
+                <Th>Node</Th>
+                <Th>State</Th>
+                <Th>Started</Th>
+                <Th>Finished</Th>
+                <Th>Nuclei</Th>
+                {showActions && <Th aria-label="Actions" />}
+              </THead>
+              <tbody>
+                {items.map((s) => {
+                  const active = s.state === "queued" || s.state === "running";
+                  const short = s.id.slice(0, 8);
+                  return (
+                    <TRow key={s.id}>
+                      <Td>
+                        <Link to={`/scans/${s.id}`} className={`font-mono text-xs ${linkClass}`}>
+                          {short}
+                        </Link>
+                      </Td>
+                      <Td>
+                        {s.target_name ? (
+                          <span>
+                            {s.target_name}
+                            {s.target_host_count ? (
+                              <span className="text-neutral-400">
+                                {" "}
+                                ({s.target_host_count} host{s.target_host_count === 1 ? "" : "s"})
+                              </span>
+                            ) : null}
+                          </span>
+                        ) : (
+                          <Muted>ad-hoc</Muted>
+                        )}
+                      </Td>
+                      <Td className="text-neutral-600 dark:text-neutral-300">{s.node_name || <Muted />}</Td>
+                      <Td>
+                        <StateBadge state={s.state} />
+                        {s.state === "running" && s.progress && (
+                          <div className="mt-1 w-40">
+                            <ProgressBar percent={s.progress.percent} />
+                          </div>
+                        )}
+                      </Td>
+                      <Td className="whitespace-nowrap text-neutral-500">{new Date(s.created_at).toLocaleString()}</Td>
+                      <Td className="whitespace-nowrap text-neutral-500">
+                        {s.finished_at ? new Date(s.finished_at).toLocaleString() : <Muted />}
+                      </Td>
+                      <Td className="font-mono text-xs text-neutral-500">{s.nuclei_version || <Muted />}</Td>
+                      {showActions && (
+                        <RowActions
+                          label={`scan ${short}`}
+                          actions={[
+                            {
+                              label: "Stop",
+                              primary: true,
+                              hidden: !canCancel || !active,
+                              disabled: cancel.isPending,
+                              onSelect: async () => {
+                                if (
+                                  await confirm({
+                                    title: `Stop scan ${short}?`,
+                                    description:
+                                      "The scanner node cancels the run. Results collected so far are not ingested.",
+                                    confirmLabel: "Stop scan",
+                                  })
+                                )
+                                  cancel.mutate(s.id);
+                              },
                             },
-                          },
-                          {
-                            label: "Delete",
-                            danger: true,
-                            hidden: !canDelete || active,
-                            disabled: del.isPending,
-                            onSelect: async () => {
-                              if (
-                                await confirm({
-                                  title: `Delete scan ${short}?`,
-                                  description:
-                                    "This removes its finding occurrences and archived output. Finding lifecycles are recomputed from the scans that remain.",
-                                  confirmLabel: "Delete scan",
-                                })
-                              )
-                                del.mutate(s.id);
+                            {
+                              label: "Delete",
+                              danger: true,
+                              hidden: !canDelete || active,
+                              disabled: del.isPending,
+                              onSelect: async () => {
+                                if (
+                                  await confirm({
+                                    title: `Delete scan ${short}?`,
+                                    description:
+                                      "This removes its finding occurrences and archived output. Finding lifecycles are recomputed from the scans that remain.",
+                                    confirmLabel: "Delete scan",
+                                  })
+                                )
+                                  del.mutate(s.id);
+                              },
                             },
-                          },
-                        ]}
-                      />
-                    )}
-                  </TRow>
-                );
-              })}
-              {(scans.data ?? []).length === 0 && <TableEmpty colSpan={colCount}>No scans yet.</TableEmpty>}
-            </tbody>
-          </Table>
-        </Card>
+                          ]}
+                        />
+                      )}
+                    </TRow>
+                  );
+                })}
+                {items.length === 0 && (
+                  <TableEmpty colSpan={colCount}>
+                    {hasFilters ? "No scans match these filters." : "No scans yet."}
+                  </TableEmpty>
+                )}
+              </tbody>
+            </Table>
+          </Card>
+          <OffsetPager
+            offset={offset}
+            total={total}
+            pageSize={PAGE_SIZE}
+            onChange={(o) => applyFilters({ offset: o })}
+          />
+        </div>
       )}
 
       {runOpen && <RunScanModal onClose={() => setRunOpen(false)} />}
