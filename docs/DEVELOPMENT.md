@@ -144,12 +144,15 @@ GitHub Actions runs:
 - on `v*` tags, tests followed by multi-architecture backend/scanner image publication to GHCR.
   Pull coordinates and tag rules (prereleases: version + `sha-*` only; a non-prerelease also
   publishes `major.minor` and `latest`) are in the
-  [Administration guide](admin/Deployment.md#run-from-published-images); and
+  [Administration guide](admin/Deployment.md#run-from-published-images);
 - on push to `main` and on `v*` tags, `docs/admin/` is published to the GitHub wiki
   (`.github/workflows/wiki.yml`). Cross-links into `docs/` always target `main`, so a
   release tag does not pin blob URLs at that tag. Manual `workflow_dispatch` only runs
   from `main` or a `v*` tag. Enable **Settings → General → Features → Wikis** and add a
-  placeholder Home page so `.wiki.git` exists (the publish job checks that repo out).
+  placeholder Home page so `.wiki.git` exists (the publish job checks that repo out); and
+- weekly, on push to `main` and on branch protection changes, an OpenSSF Scorecard analysis
+  of `main` whose SARIF results are uploaded to code scanning (`.github/workflows/scorecard.yml`).
+  It never runs on pull requests, and its results are not published to the public Scorecard API.
 
 Before opening a PR, run the repository-wide Go gates and the SPA production build. Keep generated
 `web/dist` output untracked.
