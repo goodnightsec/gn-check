@@ -2,7 +2,10 @@ name: gn-check
 
 services:
   postgres:
-    image: postgres:18-alpine
+    # Stay on 16 until a major upgrade is planned: the 18 image moved
+    # PGDATA to /var/lib/postgresql/18/docker and needs a volume migration
+    # (pg_upgrade or a fresh local volume) before the mount can change.
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: nuclei
       POSTGRES_PASSWORD: nuclei
