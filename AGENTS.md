@@ -291,7 +291,7 @@ internal/store     Postgres access + embedded migrations (internal/store/migrati
 web/               React + TS + Vite SPA; embedded into the backend via go:embed (web/embed.go)
 deploy/            Dockerfile.backend (SPA build + distroless), Dockerfile.scanner, keycloak/ (seeded realm), garage/ (local S3 config)
 docker-compose.yml postgres + garage + keycloak + scanner + backend
-.github/workflows/ CI (build/vet/test + SPA), release (images → GHCR), wiki (`docs/admin/` → GitHub wiki)
+.github/workflows/ CI (build/vet/test + SPA), release (images → GHCR), wiki (`docs/admin/` → GitHub wiki), scorecard (weekly OpenSSF Scorecard → code scanning)
 docs/ARCHITECTURE.md   design decisions (source of truth); docs/admin/ is the administration guide (published to the GitHub wiki); API.md, DEVELOPMENT.md are the other practical guides; UI_STYLE_GUIDE.md is the web UI design system
 ```
 
