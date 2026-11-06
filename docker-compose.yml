@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: nuclei
       POSTGRES_DB: nuclei
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -38,7 +38,7 @@ services:
       GARAGE_DEFAULT_SECRET_KEY: "nsc-dev-garage-secret"
       GARAGE_DEFAULT_BUCKET: "nuclei-raw"
     ports:
-      - "3900:3900"
+      - "127.0.0.1:3900:3900"
     volumes:
       - ./deploy/garage/garage.toml:/etc/garage.toml:ro
       - garagemeta:/var/lib/garage/meta
@@ -68,7 +68,7 @@ services:
       KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
       KC_HTTP_PORT: "8080"
     ports:
-      - "8082:8080"
+      - "127.0.0.1:8082:8080"
     volumes:
       - ./deploy/keycloak/realm-nsc.json:/opt/keycloak/data/import/realm-nsc.json:ro
     healthcheck:
@@ -89,6 +89,9 @@ services:
       SCANNER_ADDR: ":8081"
       SCANNER_TOKEN: "${SCANNER_TOKEN:-dev-scanner-token-change-me-0123456789ab}"
     ports:
+      # All interfaces on purpose: the documented SPA hot-reload flow seeds
+      # a node with a LAN-reachable endpoint, and the validator rejects
+      # loopback. The scanner holds no database credentials.
       - "8081:8081"
 
   backend:
@@ -148,7 +151,7 @@ services:
       garage:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
 
 volumes:
   pgdata:
