@@ -66,10 +66,7 @@ export function OccurrenceDetailPage() {
           <Meta label="Observed at">{new Date(occurrence.created_at).toLocaleString()}</Meta>
           <Meta label="Lifecycle finding">
             {occurrence.finding_id != null ? (
-              <Link
-                to={`/findings/${occurrence.finding_id}`}
-                className={linkClass}
-              >
+              <Link to={`/findings/${occurrence.finding_id}`} className={linkClass}>
                 Open merged finding
               </Link>
             ) : (
@@ -132,8 +129,12 @@ export function OccurrenceDetailPage() {
         classification["cvss-metrics"]) && (
         <Section title="Classification">
           <DescriptionList columns={4}>
-            <Meta label="CVE"><TagList items={classification["cve-id"]} /></Meta>
-            <Meta label="CWE"><TagList items={classification["cwe-id"]} /></Meta>
+            <Meta label="CVE">
+              <TagList items={classification["cve-id"]} />
+            </Meta>
+            <Meta label="CWE">
+              <TagList items={classification["cwe-id"]} />
+            </Meta>
             <Meta label="CVSS">{classification["cvss-score"] ?? "—"}</Meta>
             <Meta label="CVSS vector">
               <span className="font-mono text-xs">{classification["cvss-metrics"] || "—"}</span>
@@ -148,15 +149,29 @@ export function OccurrenceDetailPage() {
         </Section>
       )}
 
-      {(occurrence.extracted_results?.length || raw["extracted-results"]?.length) ? (
+      {occurrence.extracted_results?.length || raw["extracted-results"]?.length ? (
         <Section title="Extracted results">
-          <ExtractedResults items={occurrence.extracted_results?.length ? occurrence.extracted_results : raw["extracted-results"]!} />
+          <ExtractedResults
+            items={occurrence.extracted_results?.length ? occurrence.extracted_results : raw["extracted-results"]!}
+          />
         </Section>
       ) : null}
 
-      {raw["curl-command"] && <Section title="Reproduce (curl)"><CodeBlock text={raw["curl-command"]} /></Section>}
-      {raw.request && <Section title="Request"><CodeBlock text={raw.request} /></Section>}
-      {raw.response && <Section title="Response"><CodeBlock text={raw.response} /></Section>}
+      {raw["curl-command"] && (
+        <Section title="Reproduce (curl)">
+          <CodeBlock text={raw["curl-command"]} />
+        </Section>
+      )}
+      {raw.request && (
+        <Section title="Request">
+          <CodeBlock text={raw.request} />
+        </Section>
+      )}
+      {raw.response && (
+        <Section title="Response">
+          <CodeBlock text={raw.response} />
+        </Section>
+      )}
 
       {info.reference?.length ? (
         <Section title="References">
@@ -187,8 +202,12 @@ export function OccurrenceDetailPage() {
 
       <Section title="Raw occurrence">
         <details>
-          <summary className="cursor-pointer text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200">Show exact raw JSON</summary>
-          <div className="mt-2"><CodeBlock text={JSON.stringify(occurrence.raw, null, 2)} /></div>
+          <summary className="cursor-pointer text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200">
+            Show exact raw JSON
+          </summary>
+          <div className="mt-2">
+            <CodeBlock text={JSON.stringify(occurrence.raw, null, 2)} />
+          </div>
         </details>
       </Section>
     </Page>

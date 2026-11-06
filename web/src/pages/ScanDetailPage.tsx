@@ -3,14 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Download } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  api,
-  scanBundleExportUrl,
-  scanLogUrl,
-  scanRawUrl,
-  type CoverageOrigin,
-  type EndpointCoverage,
-} from "../api";
+import { api, scanBundleExportUrl, scanLogUrl, scanRawUrl, type CoverageOrigin, type EndpointCoverage } from "../api";
 import { hasRole, useMe } from "../auth";
 import { ScanFindingsView } from "../components/ScanFindingsView";
 import {
@@ -113,7 +106,9 @@ export function ScanDetailPage() {
               <Meta label="Target">
                 {scan.data.target_name ? (
                   <>
-                    <OptionalLink to={scan.data.target_id ? "/targets" : undefined}>{scan.data.target_name}</OptionalLink>
+                    <OptionalLink to={scan.data.target_id ? "/targets" : undefined}>
+                      {scan.data.target_name}
+                    </OptionalLink>
                     {scan.data.target_host_count ? (
                       <span className="text-neutral-400">
                         {" "}
@@ -177,48 +172,46 @@ export function ScanDetailPage() {
             )}
             {/* Scanning phase (Nuclei): request-based percentage, stats shown
                 per-target (#86) rather than as one overall counter. */}
-            {scan.data.state === "running" &&
-              scan.data.progress &&
-              scan.data.progress.phase !== "discovering" && (
-                <div className="mt-4">
-                  <ProgressBar percent={scan.data.progress.percent} />
-                  <p className="mt-1 text-xs text-neutral-500">
-                    {(() => {
-                      const p = scan.data.progress;
-                      const done = p.requests ?? 0;
-                      const total = p.total ?? 0;
-                      // Nuclei reports only OVERALL request counts, not per-target
-                      // progress — it interleaves templates across all targets rather
-                      // than finishing one before the next. So show the real overall
-                      // numbers, and translate the completion fraction into an
-                      // ESTIMATE of targets done (~frac × count) rather than faking a
-                      // per-target request figure by dividing the total. When discovery
-                      // ran, the target count is the authoritative discovered-endpoint
-                      // count (stable, and matches the "N ports on M hosts" line below);
-                      // Nuclei's own "hosts" stat counts distinct hosts and fluctuates.
-                      // Without discovery, fall back to that host count.
-                      const discovered = scan.data.discovered_targets?.length ?? 0;
-                      const count = discovered > 0 ? discovered : (p.hosts ?? 0);
-                      const unit = discovered > 0 ? "endpoint" : "host";
-                      const frac = total > 0 ? done / total : (p.percent ?? 0) / 100;
-                      const estDone = Math.min(count, Math.round(frac * count));
-                      const summary =
-                        count > 0
-                          ? `${done.toLocaleString()} / ${total.toLocaleString()} requests · ~${estDone} of ${count} ${unit}${count === 1 ? "" : "s"} scanned`
-                          : `${done.toLocaleString()} / ${total.toLocaleString()} requests`;
-                      const elapsed = (Date.now() - new Date(scan.data.created_at).getTime()) / 1000;
-                      const eta = scanEtaSeconds(p, elapsed);
-                      return (
-                        <>
-                          {summary}
-                          {p.rps ? ` · ${p.rps} rps` : ""} ·{" "}
-                          {eta != null ? `${formatDuration(eta)} remaining` : "estimating…"}
-                        </>
-                      );
-                    })()}
-                  </p>
-                </div>
-              )}
+            {scan.data.state === "running" && scan.data.progress && scan.data.progress.phase !== "discovering" && (
+              <div className="mt-4">
+                <ProgressBar percent={scan.data.progress.percent} />
+                <p className="mt-1 text-xs text-neutral-500">
+                  {(() => {
+                    const p = scan.data.progress;
+                    const done = p.requests ?? 0;
+                    const total = p.total ?? 0;
+                    // Nuclei reports only OVERALL request counts, not per-target
+                    // progress — it interleaves templates across all targets rather
+                    // than finishing one before the next. So show the real overall
+                    // numbers, and translate the completion fraction into an
+                    // ESTIMATE of targets done (~frac × count) rather than faking a
+                    // per-target request figure by dividing the total. When discovery
+                    // ran, the target count is the authoritative discovered-endpoint
+                    // count (stable, and matches the "N ports on M hosts" line below);
+                    // Nuclei's own "hosts" stat counts distinct hosts and fluctuates.
+                    // Without discovery, fall back to that host count.
+                    const discovered = scan.data.discovered_targets?.length ?? 0;
+                    const count = discovered > 0 ? discovered : (p.hosts ?? 0);
+                    const unit = discovered > 0 ? "endpoint" : "host";
+                    const frac = total > 0 ? done / total : (p.percent ?? 0) / 100;
+                    const estDone = Math.min(count, Math.round(frac * count));
+                    const summary =
+                      count > 0
+                        ? `${done.toLocaleString()} / ${total.toLocaleString()} requests · ~${estDone} of ${count} ${unit}${count === 1 ? "" : "s"} scanned`
+                        : `${done.toLocaleString()} / ${total.toLocaleString()} requests`;
+                    const elapsed = (Date.now() - new Date(scan.data.created_at).getTime()) / 1000;
+                    const eta = scanEtaSeconds(p, elapsed);
+                    return (
+                      <>
+                        {summary}
+                        {p.rps ? ` · ${p.rps} rps` : ""} ·{" "}
+                        {eta != null ? `${formatDuration(eta)} remaining` : "estimating…"}
+                      </>
+                    );
+                  })()}
+                </p>
+              </div>
+            )}
             {scan.data.state === "running" && !scan.data.progress && (
               <p className="mt-4 text-xs text-neutral-400">Waiting for progress from the scanner…</p>
             )}
@@ -241,10 +234,10 @@ export function ScanDetailPage() {
             )}
             {scan.data.skipped_finding_count > 0 && (
               <Alert tone="warning" className="mt-4">
-                {scan.data.skipped_finding_count.toLocaleString()}{" "}malformed finding{" "}
-                {scan.data.skipped_finding_count === 1 ? "record was" : "records were"} skipped during ingest;
-                indexed results are partial; absent findings cannot be auto-mitigated from this scan.
-                Operational ingest failures remain scan-fatal.
+                {scan.data.skipped_finding_count.toLocaleString()} malformed finding{" "}
+                {scan.data.skipped_finding_count === 1 ? "record was" : "records were"} skipped during ingest; indexed
+                results are partial; absent findings cannot be auto-mitigated from this scan. Operational ingest
+                failures remain scan-fatal.
               </Alert>
             )}
             {scan.data.discovered_targets && scan.data.discovered_targets.length > 0 && (
@@ -307,7 +300,7 @@ function DownloadMenu({ id, hasRaw, hasLog }: { id: string; hasRaw: boolean; has
           {item(
             scanBundleExportUrl(id, "zip"),
             "Scan bundle (zip)",
-            "Scan record, resolved config and every occurrence as preserved raw JSON — the destination re-derives its own finding lifecycle (#136)",
+            "Scan record, resolved config and every occurrence as preserved raw JSON — the destination re-derives its own finding lifecycle (#136)"
           )}
           {item(scanBundleExportUrl(id), "Scan bundle (JSON)", "Same bundle as readable JSON (#136)")}
         </DropdownMenu.Content>
@@ -353,9 +346,7 @@ function CoveredEndpoints({
         </Alert>
       )}
       {endpoints.length === 0 ? (
-        <p className="mt-1 text-xs text-neutral-400">
-          No template/endpoint pair completed a successful request.
-        </p>
+        <p className="mt-1 text-xs text-neutral-400">No template/endpoint pair completed a successful request.</p>
       ) : (
         <div className="mt-2 flex max-h-40 flex-wrap gap-1 overflow-y-auto">
           {visibleEndpoints.map((pair) => (

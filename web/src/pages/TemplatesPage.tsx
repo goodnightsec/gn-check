@@ -78,25 +78,14 @@ function fmtTime(value?: string) {
   return value ? new Date(value).toLocaleString() : "—";
 }
 
-function TemplateDetailModal({
-  templateID,
-  onClose,
-}: {
-  templateID: string;
-  onClose: () => void;
-}) {
+function TemplateDetailModal({ templateID, onClose }: { templateID: string; onClose: () => void }) {
   const detail = useQuery({
     queryKey: ["template", templateID],
     queryFn: () => api.getTemplate(templateID),
   });
   const unavailable = detail.data != null && detail.data.availability !== "active";
   return (
-    <Modal
-      open
-      onOpenChange={(open) => !open && onClose()}
-      title={detail.data?.name || templateID}
-      size="wide"
-    >
+    <Modal open onOpenChange={(open) => !open && onClose()} title={detail.data?.name || templateID} size="wide">
       {detail.isError ? (
         <ErrorText error={detail.error} />
       ) : detail.isLoading || !detail.data ? (
@@ -124,12 +113,14 @@ function TemplateDetailModal({
           </DescriptionList>
           {unavailable && (
             <Alert tone="warning" title="Removed from the active catalog">
-              This template is not served by the current upstream source (availability:{" "}
-              {detail.data.availability}). Scans resolving a template set that still lists it are
-              refused until the set is updated or the template returns upstream.
+              This template is not served by the current upstream source (availability: {detail.data.availability}).
+              Scans resolving a template set that still lists it are refused until the set is updated or the template
+              returns upstream.
             </Alert>
           )}
-          {detail.data.description && <p className="text-sm text-neutral-600 dark:text-neutral-400">{detail.data.description}</p>}
+          {detail.data.description && (
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">{detail.data.description}</p>
+          )}
           <pre className="max-h-[50dvh] overflow-auto rounded-md bg-neutral-950 p-4 text-xs text-neutral-100">
             {detail.data.yaml}
           </pre>
@@ -186,8 +177,7 @@ function CustomTemplateModal({
   }, [detail.data, draftLoaded]);
   const yaml = draft;
   const save = useMutation({
-    mutationFn: () =>
-      existing ? api.updateTemplate(existing.id, yaml) : api.createTemplate(yaml),
+    mutationFn: () => (existing ? api.updateTemplate(existing.id, yaml) : api.createTemplate(yaml)),
     onSuccess: (saved) => {
       qc.setQueryData<TemplateDetail>(["template", saved.id], saved);
       void qc.invalidateQueries({ queryKey: ["templates"] });
@@ -210,8 +200,8 @@ function CustomTemplateModal({
       ) : (
         <div className="space-y-4">
           <FormHint>
-            Upload or paste one Nuclei YAML document. A healthy scanner node validates it with the
-            deployed Nuclei engine before it is saved. The template ID is immutable after creation.
+            Upload or paste one Nuclei YAML document. A healthy scanner node validates it with the deployed Nuclei
+            engine before it is saved. The template ID is immutable after creation.
           </FormHint>
           <Field label="Upload a YAML file" hint="Replaces the editor content below.">
             <FileInput
@@ -282,7 +272,9 @@ function CatalogTable({
             {sort === value ? (order === "desc" ? "↓" : "↑") : "↕"}
           </span>
         </button>
-      ) : label}
+      ) : (
+        label
+      )}
     </Th>
   );
   return (
@@ -323,7 +315,9 @@ function CatalogTable({
                 {template.id}
               </div>
             </Td>
-            <Td><SeverityBadge severity={template.severity} /></Td>
+            <Td>
+              <SeverityBadge severity={template.severity} />
+            </Td>
             <Td>
               <Pill tone={template.source === "custom" ? "good" : "neutral"}>{template.source}</Pill>
             </Td>
@@ -334,7 +328,10 @@ function CatalogTable({
             <Td className="tabular-nums text-neutral-500">{template.revision}</Td>
             <RowActions
               label={template.id}
-              actions={[{ label: "View YAML", primary: true, onSelect: () => onView(template) }, ...(actions?.(template) ?? [])]}
+              actions={[
+                { label: "View YAML", primary: true, onSelect: () => onView(template) },
+                ...(actions?.(template) ?? []),
+              ]}
             />
           </TRow>
         ))}
@@ -428,7 +425,7 @@ function CatalogTab({ canWrite }: { canWrite: boolean }) {
   const resetPage = () => setOffset(0);
   const changeSort = (nextSort: TemplateSort) => {
     if (nextSort === sort) {
-      setOrder((current) => current === "asc" ? "desc" : "asc");
+      setOrder((current) => (current === "asc" ? "desc" : "asc"));
     } else {
       setSort(nextSort);
       setOrder(["severity", "inserted", "revision"].includes(nextSort) ? "desc" : "asc");
@@ -443,23 +440,57 @@ function CatalogTab({ canWrite }: { canWrite: boolean }) {
       <Card className="p-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Field label="Search">
-            <Input className="w-full" value={query} onChange={(event) => { setQuery(event.target.value); resetPage(); }} placeholder="ID, name, description" />
+            <Input
+              className="w-full"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                resetPage();
+              }}
+              placeholder="ID, name, description"
+            />
           </Field>
           <Field label="Source">
-            <Select className="w-full" value={source} onChange={(event) => { setSource(event.target.value as TemplateSource | ""); resetPage(); }}>
+            <Select
+              className="w-full"
+              value={source}
+              onChange={(event) => {
+                setSource(event.target.value as TemplateSource | "");
+                resetPage();
+              }}
+            >
               <option value="">All sources</option>
               <option value="upstream">Upstream</option>
               <option value="custom">Custom</option>
             </Select>
           </Field>
           <Field label="Severity">
-            <Select className="w-full" value={severity} onChange={(event) => { setSeverity(event.target.value); resetPage(); }}>
+            <Select
+              className="w-full"
+              value={severity}
+              onChange={(event) => {
+                setSeverity(event.target.value);
+                resetPage();
+              }}
+            >
               <option value="">All severities</option>
-              {SEVERITIES.map((value) => <option key={value} value={value}>{value}</option>)}
+              {SEVERITIES.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
             </Select>
           </Field>
           <Field label="Tags">
-            <Input className="w-full" value={tags} onChange={(event) => { setTags(event.target.value); resetPage(); }} placeholder="cve, rce" />
+            <Input
+              className="w-full"
+              value={tags}
+              onChange={(event) => {
+                setTags(event.target.value);
+                resetPage();
+              }}
+              placeholder="cve, rce"
+            />
           </Field>
         </div>
       </Card>
@@ -469,10 +500,15 @@ function CatalogTab({ canWrite }: { canWrite: boolean }) {
           <div className="flex flex-wrap items-end gap-3">
             <div className="mr-auto space-y-0.5">
               <div className="font-medium">{selected.size} selected</div>
-              <Button variant="link" className="text-xs" onClick={() => setSelected(new Set())}>Clear selection</Button>
+              <Button variant="link" className="text-xs" onClick={() => setSelected(new Set())}>
+                Clear selection
+              </Button>
             </div>
             <Field label="Export format">
-              <Select value={exportFormat} onChange={(event) => setExportFormat(event.target.value as TemplateArchiveFormat)}>
+              <Select
+                value={exportFormat}
+                onChange={(event) => setExportFormat(event.target.value as TemplateArchiveFormat)}
+              >
                 <option value="yaml">YAML archive (.tar.gz)</option>
                 <option value="json">JSON document</option>
               </Select>
@@ -485,14 +521,23 @@ function CatalogTab({ canWrite }: { canWrite: boolean }) {
                 <Field label="Add to existing set">
                   <Select className="min-w-52" value={setID} onChange={(event) => setSetID(event.target.value)}>
                     <option value="">Choose a set…</option>
-                    {explicitSets.map((set) => <option key={set.id} value={set.id}>{set.name}</option>)}
+                    {explicitSets.map((set) => (
+                      <option key={set.id} value={set.id}>
+                        {set.name}
+                      </option>
+                    ))}
                   </Select>
                 </Field>
                 <Button variant="primary" disabled={!setID || add.isPending} onClick={() => add.mutate()}>
                   {add.isPending ? "Adding…" : "Add selected"}
                 </Button>
                 <Field label="Or create a set">
-                  <Input className="w-52 shrink-0" value={setName} onChange={(event) => setSetName(event.target.value)} placeholder="internet-exposure" />
+                  <Input
+                    className="w-52 shrink-0"
+                    value={setName}
+                    onChange={(event) => setSetName(event.target.value)}
+                    placeholder="internet-exposure"
+                  />
                 </Field>
                 <Button disabled={!setName.trim() || create.isPending} onClick={() => create.mutate()}>
                   {create.isPending ? "Creating…" : "Create from selection"}
@@ -510,25 +555,45 @@ function CatalogTab({ canWrite }: { canWrite: boolean }) {
               </FormHint>
             </div>
           )}
-          {download.isError && <div className="mt-3"><ErrorText error={download.error} /></div>}
-          {(add.isError || create.isError) && <div className="mt-3"><ErrorText error={add.error ?? create.error} /></div>}
+          {download.isError && (
+            <div className="mt-3">
+              <ErrorText error={download.error} />
+            </div>
+          )}
+          {(add.isError || create.isError) && (
+            <div className="mt-3">
+              <ErrorText error={add.error ?? create.error} />
+            </div>
+          )}
         </Card>
       )}
-      {notice && <Alert tone="success" onDismiss={() => setNotice("")}>{notice}</Alert>}
+      {notice && (
+        <Alert tone="success" onDismiss={() => setNotice("")}>
+          {notice}
+        </Alert>
+      )}
       {selectMatching.isError && <ErrorText error={selectMatching.error} />}
 
-      {templates.isError ? <ErrorText error={templates.error} /> : templates.isLoading || !templates.data ? <Spinner /> : (
+      {templates.isError ? (
+        <ErrorText error={templates.error} />
+      ) : templates.isLoading || !templates.data ? (
+        <Spinner />
+      ) : (
         <Card>
           <CardHeader>
-            <span className="text-xs text-neutral-500">{templates.data.total} templates match the current filters.</span>
+            <span className="text-xs text-neutral-500">
+              {templates.data.total} templates match the current filters.
+            </span>
             <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
-                onClick={() => setSelected((current) => {
-                  const next = new Set(current);
-                  templates.data.items.forEach((template) => next.add(template.id));
-                  return next;
-                })}
+                onClick={() =>
+                  setSelected((current) => {
+                    const next = new Set(current);
+                    templates.data.items.forEach((template) => next.add(template.id));
+                    return next;
+                  })
+                }
               >
                 Select this page
               </Button>
@@ -544,11 +609,14 @@ function CatalogTab({ canWrite }: { canWrite: boolean }) {
           <CatalogTable
             templates={templates.data.items}
             selected={selected}
-            onToggle={(id) => setSelected((current) => {
-              const next = new Set(current);
-              if (next.has(id)) next.delete(id); else next.add(id);
-              return next;
-            })}
+            onToggle={(id) =>
+              setSelected((current) => {
+                const next = new Set(current);
+                if (next.has(id)) next.delete(id);
+                else next.add(id);
+                return next;
+              })
+            }
             onView={setViewing}
             sort={sort}
             order={order}
@@ -577,7 +645,7 @@ function CustomTab({ canWrite, canDelete }: { canWrite: boolean; canDelete: bool
   });
   const changeSort = (nextSort: TemplateSort) => {
     if (nextSort === sort) {
-      setOrder((current) => current === "asc" ? "desc" : "asc");
+      setOrder((current) => (current === "asc" ? "desc" : "asc"));
     } else {
       setSort(nextSort);
       setOrder(["severity", "inserted", "revision"].includes(nextSort) ? "desc" : "asc");
@@ -592,12 +660,26 @@ function CustomTab({ canWrite, canDelete }: { canWrite: boolean; canDelete: bool
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-neutral-500">Organization-specific YAML, validated by Nuclei and stored losslessly alongside the upstream catalog.</p>
-        {canWrite && <Button variant="primary" onClick={() => setEditing("new")}>New custom template</Button>}
+        <p className="text-sm text-neutral-500">
+          Organization-specific YAML, validated by Nuclei and stored losslessly alongside the upstream catalog.
+        </p>
+        {canWrite && (
+          <Button variant="primary" onClick={() => setEditing("new")}>
+            New custom template
+          </Button>
+        )}
       </div>
-      {notice && <Alert tone="success" onDismiss={() => setNotice("")}>{notice}</Alert>}
+      {notice && (
+        <Alert tone="success" onDismiss={() => setNotice("")}>
+          {notice}
+        </Alert>
+      )}
       {remove.isError && <ErrorText error={remove.error} />}
-      {templates.isError ? <ErrorText error={templates.error} /> : templates.isLoading || !templates.data ? <Spinner /> : (
+      {templates.isError ? (
+        <ErrorText error={templates.error} />
+      ) : templates.isLoading || !templates.data ? (
+        <Spinner />
+      ) : (
         <Card>
           <CatalogTable
             templates={templates.data.items}
@@ -616,7 +698,8 @@ function CustomTab({ canWrite, canDelete }: { canWrite: boolean; canDelete: bool
                   if (
                     await confirm({
                       title: `Delete custom template “${template.id}”?`,
-                      description: "Exact template sets that include it lose this member. Deletion is refused while an exclude-mode set lists it.",
+                      description:
+                        "Exact template sets that include it lose this member. Deletion is refused while an exclude-mode set lists it.",
                       confirmLabel: "Delete template",
                     })
                   )
@@ -633,9 +716,11 @@ function CustomTab({ canWrite, canDelete }: { canWrite: boolean; canDelete: bool
         <CustomTemplateModal
           existing={editing === "new" ? undefined : editing}
           onClose={() => setEditing(null)}
-          onSaved={(saved) => setNotice(
-            `Saved ${saved.id}; validated with Nuclei ${saved.validation?.nuclei_version ?? "on the scanner node"}.`,
-          )}
+          onSaved={(saved) =>
+            setNotice(
+              `Saved ${saved.id}; validated with Nuclei ${saved.validation?.nuclei_version ?? "on the scanner node"}.`
+            )
+          }
         />
       )}
     </div>
@@ -663,16 +748,24 @@ function SyncRunRow({
     run.source_ref && prev?.source_ref
       ? describeSourceSwitch(
           { repo: prev.source_repo, ref: prev.source_ref },
-          { repo: run.source_repo, ref: run.source_ref },
+          { repo: run.source_repo, ref: run.source_ref }
         )
       : "";
   return (
     <TRow>
       <Td className="whitespace-nowrap">
-        {indent && <span aria-hidden="true" className="mr-1 text-neutral-400">↳</span>}
+        {indent && (
+          <span aria-hidden="true" className="mr-1 text-neutral-400">
+            ↳
+          </span>
+        )}
         {fmtTime(run.started_at)}
       </Td>
-      <Td><Pill tone={run.status === "success" ? "good" : run.status === "failed" ? "warn" : "neutral"}>{run.status}</Pill></Td>
+      <Td>
+        <Pill tone={run.status === "success" ? "good" : run.status === "failed" ? "warn" : "neutral"}>
+          {run.status}
+        </Pill>
+      </Td>
       <Td className="tabular-nums" title={result.title || undefined}>
         {result.text}
         {expander}
@@ -683,11 +776,11 @@ function SyncRunRow({
             <div className="font-mono text-xs" title={run.templates_commit}>
               {shortDigest(run.templates_commit)}
             </div>
-            <div className="text-xs tabular-nums text-neutral-500">
-              {run.template_count ?? 0} templates
-            </div>
+            <div className="text-xs tabular-nums text-neutral-500">{run.template_count ?? 0} templates</div>
           </>
-        ) : <Muted />}
+        ) : (
+          <Muted />
+        )}
       </Td>
       <Td className="whitespace-nowrap" title={upstream.title || undefined}>
         <div className="font-mono text-xs">{upstream.text}</div>
@@ -698,13 +791,13 @@ function SyncRunRow({
           </div>
         )}
         {switched && (
-          <div className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">
-            Source switched: {switched}
-          </div>
+          <div className="mt-0.5 text-xs text-amber-700 dark:text-amber-400">Source switched: {switched}</div>
         )}
       </Td>
       <Td className="whitespace-nowrap text-neutral-500">{fmtTime(run.finished_at)}</Td>
-      <Td className="max-w-md text-xs text-rose-600 dark:text-rose-400" title={run.error}>{run.error || <Muted />}</Td>
+      <Td className="max-w-md text-xs text-rose-600 dark:text-rose-400" title={run.error}>
+        {run.error || <Muted />}
+      </Td>
     </TRow>
   );
 }
@@ -741,12 +834,11 @@ function PreviewImpact({ preview }: { preview: TemplateSyncPreview }) {
       </div>
       {affected.length > 0 && (
         <p>
-          {affected.length === 1 ? "One exact set" : `${affected.length} exact sets`} would lose
-          active members:{" "}
-          {affected.map((s) => `${s.name} (${s.losing_count} of ${s.member_count})`).join(", ")}.{" "}
-          The members stay listed and return if the template reappears upstream, but{" "}
-          <span className="font-medium">scans and schedules using these sets are refused</span>{" "}
-          until their explicit selection is updated.
+          {affected.length === 1 ? "One exact set" : `${affected.length} exact sets`} would lose active members:{" "}
+          {affected.map((s) => `${s.name} (${s.losing_count} of ${s.member_count})`).join(", ")}. The members stay
+          listed and return if the template reappears upstream, but{" "}
+          <span className="font-medium">scans and schedules using these sets are refused</span> until their explicit
+          selection is updated.
         </p>
       )}
       {(policies.length > 0 || schedules.length > 0) && (
@@ -764,21 +856,20 @@ function PreviewImpact({ preview }: { preview: TemplateSyncPreview }) {
       )}
       {preview.removed > 0 && affected.length === 0 && (
         <p>
-          Removed upstream templates stay listed in any exact set that holds them; scans naming one
-          are refused until the source serves it again or the set is updated.
+          Removed upstream templates stay listed in any exact set that holds them; scans naming one are refused until
+          the source serves it again or the set is updated.
         </p>
       )}
       {regained.length > 0 && (
         <p>
-          {regained.length === 1 ? "One exact set" : `${regained.length} exact sets`} regain
-          currently unavailable members —{" "}
-          {regained.map((s) => `${s.name} (${s.regaining_count} of ${s.member_count})`).join(", ")}{" "}
-          — and become scannable again after the sync.
+          {regained.length === 1 ? "One exact set" : `${regained.length} exact sets`} regain currently unavailable
+          members — {regained.map((s) => `${s.name} (${s.regaining_count} of ${s.member_count})`).join(", ")} — and
+          become scannable again after the sync.
         </p>
       )}
       <p className="text-xs text-neutral-500">
-        Resolves to commit <span className="font-mono">{shortDigest(preview.commit)}</span>. The
-        switch queues an immediate sync; track it in the runs table below.
+        Resolves to commit <span className="font-mono">{shortDigest(preview.commit)}</span>. The switch queues an
+        immediate sync; track it in the runs table below.
       </p>
     </div>
   );
@@ -904,8 +995,8 @@ function ChangeSourceModal({
         )}
         {!disable && pickerVisible && channel === "preview" && (
           <Alert tone="warning" title="Preview tracks the unreleased main branch">
-            Templates change between syncs and may require a newer Nuclei engine than the pinned scanner
-            (NUCLEI_VERSION in deploy/Dockerfile.scanner); those templates fail at runtime on the node.
+            Templates change between syncs and may require a newer Nuclei engine than the pinned scanner (NUCLEI_VERSION
+            in deploy/Dockerfile.scanner); those templates fail at runtime on the node.
           </Alert>
         )}
         {!disable && (!pickerVisible || channel === "custom") && (
@@ -949,7 +1040,9 @@ function ChangeSourceModal({
                   value={repoDraft}
                   onChange={(event) => setRepoDraft(event.target.value)}
                   disabled={disable}
-                  placeholder={status.enabled ? status.repo : "https://github.com/projectdiscovery/nuclei-templates.git"}
+                  placeholder={
+                    status.enabled ? status.repo : "https://github.com/projectdiscovery/nuclei-templates.git"
+                  }
                   spellCheck={false}
                   className="font-mono text-xs"
                 />
@@ -1001,7 +1094,7 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
     setSourceNotice(
       next.enabled
         ? `Upstream source switched to ${next.repo} at ${next.ref}; a sync is queued.`
-        : "Upstream sync disabled; custom templates and node distribution keep working.",
+        : "Upstream sync disabled; custom templates and node distribution keep working."
     );
     void qc.invalidateQueries({ queryKey: ["template-sync"] });
     void qc.invalidateQueries({ queryKey: ["templates"] });
@@ -1011,8 +1104,16 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
 
   return (
     <div className="space-y-4">
-      {sourceNotice && <Alert tone="success" onDismiss={() => setSourceNotice("")}>{sourceNotice}</Alert>}
-      {status.isError ? <ErrorText error={status.error} /> : status.isLoading || !status.data ? <Spinner /> : (
+      {sourceNotice && (
+        <Alert tone="success" onDismiss={() => setSourceNotice("")}>
+          {sourceNotice}
+        </Alert>
+      )}
+      {status.isError ? (
+        <ErrorText error={status.error} />
+      ) : status.isLoading || !status.data ? (
+        <Spinner />
+      ) : (
         <Section
           title={
             <span className="flex items-center gap-2">
@@ -1028,7 +1129,11 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
                 </Button>
               )}
               {canWrite && (
-                <Button variant="primary" disabled={!status.data.enabled || trigger.isPending} onClick={() => trigger.mutate()}>
+                <Button
+                  variant="primary"
+                  disabled={!status.data.enabled || trigger.isPending}
+                  onClick={() => trigger.mutate()}
+                >
                   {trigger.isPending ? "Queueing…" : trigger.isSuccess ? "Sync queued" : "Sync now"}
                 </Button>
               )}
@@ -1038,7 +1143,9 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
           <div className="space-y-3">
             {status.data.enabled ? (
               <DescriptionList>
-                <Meta label="Repository"><span className="break-all font-mono text-xs">{status.data.repo}</span></Meta>
+                <Meta label="Repository">
+                  <span className="break-all font-mono text-xs">{status.data.repo}</span>
+                </Meta>
                 <Meta label="Ref">
                   <span className="inline-flex items-center gap-2">
                     <span className="font-mono text-xs">{status.data.ref}</span>
@@ -1056,7 +1163,9 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
                     {shortDigest(status.data.templates_commit)}
                   </span>
                 </Meta>
-                <Meta label="Active templates"><span className="tabular-nums">{status.data.template_count}</span></Meta>
+                <Meta label="Active templates">
+                  <span className="tabular-nums">{status.data.template_count}</span>
+                </Meta>
               </DescriptionList>
             ) : (
               <p className="text-sm text-neutral-500">
@@ -1074,7 +1183,11 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
         </Section>
       )}
 
-      {runs.isError ? <ErrorText error={runs.error} /> : runs.isLoading || !runs.data ? <Spinner /> : (
+      {runs.isError ? (
+        <ErrorText error={runs.error} />
+      ) : runs.isLoading || !runs.data ? (
+        <Spinner />
+      ) : (
         <Card>
           <CardHeader>
             <div>
@@ -1085,28 +1198,29 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
             </div>
           </CardHeader>
           <Table>
-              <THead>
-                <Th>Started</Th>
-                <Th>Status</Th>
-                <Th>Result</Th>
-                <Th>Catalog bundle</Th>
-                <Th>Upstream commit</Th>
-                <Th>Finished</Th>
-                <Th>Error</Th>
-              </THead>
-              <tbody>
-                {collapseSyncRuns(runs.data.items).map(({ run, count, rest }) => {
-                  // Key by the series' oldest run so the group stays stable as
-                  // new periodic refreshes arrive on top.
-                  const groupKey = rest.length > 0 ? rest[rest.length - 1].id : run.id;
-                  const isExpanded = expanded.has(groupKey);
-                  return (
-                    <Fragment key={groupKey}>
-                      <SyncRunRow
-                        run={run}
-                        prev={olderById.get(run.id)}
-                        result={formatSyncRunRow(run, count, fmtTime(run.finished_at))}
-                        expander={count > 1 && (
+            <THead>
+              <Th>Started</Th>
+              <Th>Status</Th>
+              <Th>Result</Th>
+              <Th>Catalog bundle</Th>
+              <Th>Upstream commit</Th>
+              <Th>Finished</Th>
+              <Th>Error</Th>
+            </THead>
+            <tbody>
+              {collapseSyncRuns(runs.data.items).map(({ run, count, rest }) => {
+                // Key by the series' oldest run so the group stays stable as
+                // new periodic refreshes arrive on top.
+                const groupKey = rest.length > 0 ? rest[rest.length - 1].id : run.id;
+                const isExpanded = expanded.has(groupKey);
+                return (
+                  <Fragment key={groupKey}>
+                    <SyncRunRow
+                      run={run}
+                      prev={olderById.get(run.id)}
+                      result={formatSyncRunRow(run, count, fmtTime(run.finished_at))}
+                      expander={
+                        count > 1 && (
                           <Button
                             variant="link"
                             aria-expanded={isExpanded}
@@ -1127,30 +1241,26 @@ function SyncTab({ canWrite, isAdmin }: { canWrite: boolean; isAdmin: boolean })
                             )}
                             {isExpanded ? "hide" : `${count - 1} more`}
                           </Button>
-                        )}
-                      />
-                      {isExpanded &&
-                        rest.map((older) => (
-                          <SyncRunRow
-                            key={older.id}
-                            run={older}
-                            prev={olderById.get(older.id)}
-                            result={formatSyncRunResult(older)}
-                            indent
-                          />
-                        ))}
-                    </Fragment>
-                  );
-                })}
-                {runs.data.items.length === 0 && <TableEmpty colSpan={7}>No upstream sync has run yet.</TableEmpty>}
-              </tbody>
+                        )
+                      }
+                    />
+                    {isExpanded &&
+                      rest.map((older) => (
+                        <SyncRunRow
+                          key={older.id}
+                          run={older}
+                          prev={olderById.get(older.id)}
+                          result={formatSyncRunResult(older)}
+                          indent
+                        />
+                      ))}
+                  </Fragment>
+                );
+              })}
+              {runs.data.items.length === 0 && <TableEmpty colSpan={7}>No upstream sync has run yet.</TableEmpty>}
+            </tbody>
           </Table>
-          <Pager
-            offset={offset}
-            total={runs.data.total}
-            pageSize={syncPageSize}
-            onChange={setOffset}
-          />
+          <Pager offset={offset} total={runs.data.total} pageSize={syncPageSize} onChange={setOffset} />
         </Card>
       )}
       {status.data && changingSource && (
@@ -1178,7 +1288,7 @@ export function TemplatesPage() {
       ? ` Validated with Nuclei ${result.validation.nuclei_version}.`
       : " No custom writes required Nuclei validation.";
     setImportNotice(
-      `Import complete: ${summary.created} created, ${summary.updated} updated, ${summary.skipped} skipped, ${summary.upstream_ignored} upstream ignored${summary.renamed.length ? `, ${summary.renamed.length} renamed` : ""}.${validation}`,
+      `Import complete: ${summary.created} created, ${summary.updated} updated, ${summary.skipped} skipped, ${summary.upstream_ignored} upstream ignored${summary.renamed.length ? `, ${summary.renamed.length} renamed` : ""}.${validation}`
     );
     setImporting(false);
     void qc.invalidateQueries({ queryKey: ["templates"] });

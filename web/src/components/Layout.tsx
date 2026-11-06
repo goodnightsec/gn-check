@@ -107,7 +107,7 @@ function paneLinkClass(isActive: boolean, collapsed: boolean) {
     collapsed ? "justify-center px-0 py-2" : "px-3 py-1.5",
     isActive
       ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
-      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800",
+      : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
   );
 }
 
@@ -161,7 +161,7 @@ function NavPane({
                   "px-2 pb-1 text-xs font-semibold uppercase tracking-wide",
                   isCategoryActive(c, currentPath)
                     ? "text-indigo-700 dark:text-indigo-300"
-                    : "text-neutral-500 dark:text-neutral-400",
+                    : "text-neutral-500 dark:text-neutral-400"
                 )}
               >
                 {c.label}
@@ -225,11 +225,7 @@ function AccountVersion() {
     <button
       type="button"
       title={info?.commit || label}
-      aria-label={
-        info?.commit
-          ? `App version ${label}. Full commit ${info.commit}. Click to copy the commit.`
-          : label
-      }
+      aria-label={info?.commit ? `App version ${label}. Full commit ${info.commit}. Click to copy the commit.` : label}
       disabled={!copyText}
       onClick={() => {
         if (!copyText) return;
@@ -336,18 +332,12 @@ export function Layout({
                 <span className="hidden sm:inline">{who}</span>
               </DropdownMenu.Trigger>
               <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  align="end"
-                  sideOffset={6}
-                  className={cn(menuContentClass, "min-w-52")}
-                >
+                <DropdownMenu.Content align="end" sideOffset={6} className={cn(menuContentClass, "min-w-52")}>
                   <div className="px-2 py-1.5 text-xs text-neutral-500">
                     {identity.email || identity.subject}
                     <div className="mt-1 flex flex-wrap gap-1">
                       {identity.roles.length ? (
-                        identity.roles.map((r) => (
-                          <Badge key={r}>{r}</Badge>
-                        ))
+                        identity.roles.map((r) => <Badge key={r}>{r}</Badge>)
                       ) : (
                         <span className="text-neutral-400">no roles</span>
                       )}
@@ -355,10 +345,7 @@ export function Layout({
                     <AccountVersion />
                   </div>
                   <DropdownMenu.Separator className={menuSeparatorClass} />
-                  <DropdownMenu.Item
-                    onSelect={() => void logout()}
-                    className={menuItemClass}
-                  >
+                  <DropdownMenu.Item onSelect={() => void logout()} className={menuItemClass}>
                     Log out
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
@@ -373,7 +360,7 @@ export function Layout({
         <div
           className={cn(
             "grid gap-8",
-            collapsed ? "md:grid-cols-[3.25rem_minmax(0,1fr)]" : "md:grid-cols-[12rem_minmax(0,1fr)]",
+            collapsed ? "md:grid-cols-[3.25rem_minmax(0,1fr)]" : "md:grid-cols-[12rem_minmax(0,1fr)]"
           )}
         >
           <aside className="sticky top-6 hidden self-start md:block">

@@ -9,9 +9,9 @@ import {
 
 describe("sanitizeRepo", () => {
   it("drops embedded credentials, query and fragment", () => {
-    expect(
-      sanitizeRepo("https://user:secret@github.com/org/repo.git?x=1#frag"),
-    ).toBe("https://github.com/org/repo.git");
+    expect(sanitizeRepo("https://user:secret@github.com/org/repo.git?x=1#frag")).toBe(
+      "https://github.com/org/repo.git"
+    );
   });
 
   it("keeps a clean URL verbatim", () => {
@@ -26,9 +26,7 @@ describe("sanitizeRepo", () => {
 describe("isDefaultRepo", () => {
   it("matches the default repository modulo credentials", () => {
     expect(isDefaultRepo(DEFAULT_TEMPLATE_REPO)).toBe(true);
-    expect(
-      isDefaultRepo("https://token@github.com/projectdiscovery/nuclei-templates.git"),
-    ).toBe(true);
+    expect(isDefaultRepo("https://token@github.com/projectdiscovery/nuclei-templates.git")).toBe(true);
   });
 
   it("rejects other repositories, emptiness and non-URLs", () => {
@@ -61,10 +59,7 @@ describe("channelFor", () => {
 describe("describeSourceSwitch", () => {
   it("labels a channel change", () => {
     expect(
-      describeSourceSwitch(
-        { repo: DEFAULT_TEMPLATE_REPO, ref: "latest" },
-        { repo: DEFAULT_TEMPLATE_REPO, ref: "main" },
-      ),
+      describeSourceSwitch({ repo: DEFAULT_TEMPLATE_REPO, ref: "latest" }, { repo: DEFAULT_TEMPLATE_REPO, ref: "main" })
     ).toBe("Stable → Preview");
   });
 
@@ -72,8 +67,8 @@ describe("describeSourceSwitch", () => {
     expect(
       describeSourceSwitch(
         { repo: "https://github.com/org/one.git", ref: "main" },
-        { repo: "https://github.com/org/two.git", ref: "main" },
-      ),
+        { repo: "https://github.com/org/two.git", ref: "main" }
+      )
     ).toBe("repository changed");
   });
 
@@ -81,35 +76,31 @@ describe("describeSourceSwitch", () => {
     expect(
       describeSourceSwitch(
         { repo: "https://user:a@github.com/org/repo.git", ref: "main" },
-        { repo: "https://github.com/org/repo.git", ref: "main" },
-      ),
+        { repo: "https://github.com/org/repo.git", ref: "main" }
+      )
     ).toBe("");
     expect(
       describeSourceSwitch(
         { repo: DEFAULT_TEMPLATE_REPO, ref: "latest" },
-        { repo: DEFAULT_TEMPLATE_REPO, ref: "latest" },
-      ),
+        { repo: DEFAULT_TEMPLATE_REPO, ref: "latest" }
+      )
     ).toBe("");
   });
 
   it("returns empty when either run predates the recorded source", () => {
-    expect(
-      describeSourceSwitch({ repo: DEFAULT_TEMPLATE_REPO }, { repo: DEFAULT_TEMPLATE_REPO, ref: "main" }),
-    ).toBe("");
-    expect(
-      describeSourceSwitch({ repo: DEFAULT_TEMPLATE_REPO, ref: "latest" }, {}),
-    ).toBe("");
+    expect(describeSourceSwitch({ repo: DEFAULT_TEMPLATE_REPO }, { repo: DEFAULT_TEMPLATE_REPO, ref: "main" })).toBe(
+      ""
+    );
+    expect(describeSourceSwitch({ repo: DEFAULT_TEMPLATE_REPO, ref: "latest" }, {})).toBe("");
   });
 
   it("labels a channel change even when the older run has no recorded repo", () => {
-    expect(
-      describeSourceSwitch({ ref: "latest" }, { repo: DEFAULT_TEMPLATE_REPO, ref: "main" }),
-    ).toBe("Stable → Preview");
+    expect(describeSourceSwitch({ ref: "latest" }, { repo: DEFAULT_TEMPLATE_REPO, ref: "main" })).toBe(
+      "Stable → Preview"
+    );
   });
 
   it("does not claim a repository change from a missing repo", () => {
-    expect(
-      describeSourceSwitch({ ref: "main" }, { repo: "https://github.com/org/two.git", ref: "main" }),
-    ).toBe("");
+    expect(describeSourceSwitch({ ref: "main" }, { repo: "https://github.com/org/two.git", ref: "main" })).toBe("");
   });
 });

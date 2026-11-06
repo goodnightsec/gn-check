@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  type TemplateImportConflict,
-  type TemplateImportResponse,
-} from "../api";
+import { type TemplateImportConflict, type TemplateImportResponse } from "../api";
 import { Button, ErrorText, Field, FileInput, Modal, ModalActions, Select } from "./ui";
 
 export function TemplateArchiveImportModal({
@@ -60,7 +57,9 @@ export function TemplateArchiveImportModal({
         </Field>
         {error !== undefined && <ErrorText error={error} />}
         <ModalActions>
-          <Button disabled={pending} onClick={onClose}>Cancel</Button>
+          <Button disabled={pending} onClick={onClose}>
+            Cancel
+          </Button>
           <Button variant="primary" disabled={pending || file == null} onClick={() => void submit()}>
             {pending ? "Validating and importing…" : "Import archive"}
           </Button>

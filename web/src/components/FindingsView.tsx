@@ -91,7 +91,7 @@ function prefsFromLocation(searchParams: URLSearchParams) {
       sort: searchParams.get("sort"),
       order: searchParams.get("order"),
     },
-    readStoredFindingsFilters(),
+    readStoredFindingsFilters()
   );
 }
 
@@ -302,7 +302,10 @@ function FindingCell({ finding, showIdentity }: { finding: LifecycleFinding; sho
         <CveChip cves={cves} />
       </div>
       {identity ? (
-        <div className="truncate font-mono text-[11px] text-neutral-500 dark:text-neutral-400" title={resultIdentityTitle(finding)}>
+        <div
+          className="truncate font-mono text-[11px] text-neutral-500 dark:text-neutral-400"
+          title={resultIdentityTitle(finding)}
+        >
           {identity}
         </div>
       ) : null}
@@ -314,7 +317,10 @@ function ResultIdentityCell({ finding }: { finding: LifecycleFinding }) {
   const identity = resultIdentityLine(finding);
   if (!identity) return <EmptyMark />;
   return (
-    <div className="truncate font-mono text-xs text-neutral-700 dark:text-neutral-200" title={resultIdentityTitle(finding)}>
+    <div
+      className="truncate font-mono text-xs text-neutral-700 dark:text-neutral-200"
+      title={resultIdentityTitle(finding)}
+    >
       {identity}
     </div>
   );
@@ -397,7 +403,10 @@ function FindingCellSwitch({
       return <TimeCell iso={finding.first_seen_at} />;
     case "cve":
       return finding.cve?.length ? (
-        <span className="block truncate font-mono text-xs text-red-700 dark:text-red-400" title={finding.cve.join(", ")}>
+        <span
+          className="block truncate font-mono text-xs text-red-700 dark:text-red-400"
+          title={finding.cve.join(", ")}
+        >
           {finding.cve.join(", ")}
         </span>
       ) : (
@@ -407,7 +416,10 @@ function FindingCellSwitch({
       return <TagsCell tags={finding.tags ?? []} />;
     case "matched_at":
       return finding.matched_at ? (
-        <span className="block truncate font-mono text-xs text-neutral-700 dark:text-neutral-200" title={finding.matched_at}>
+        <span
+          className="block truncate font-mono text-xs text-neutral-700 dark:text-neutral-200"
+          title={finding.matched_at}
+        >
           {finding.matched_at}
         </span>
       ) : (
@@ -443,7 +455,7 @@ export function FindingsView() {
   const [exporting, setExporting] = useState<ExportFormat | null>(null);
   const [exportNotice, setExportNotice] = useState<{ kind: "warning" | "error"; text: string } | null>(null);
   const [columnPrefs, setColumnPrefs] = useState<FindingsColumnPrefs>(() =>
-    mergeFindingsColumns(readStoredFindingsColumns()),
+    mergeFindingsColumns(readStoredFindingsColumns())
   );
   const columnPrefsRef = useRef(columnPrefs);
   columnPrefsRef.current = columnPrefs;
@@ -498,10 +510,7 @@ export function FindingsView() {
         setColumnPrefs(next);
       }
       if (e.key === FINDINGS_FILTERS_KEY || e.key === null) {
-        const next = resolveFindingsFilterPrefs(
-          { filter: null, sort: null, order: null },
-          readStoredFindingsFilters(),
-        );
+        const next = resolveFindingsFilterPrefs({ filter: null, sort: null, order: null }, readStoredFindingsFilters());
         setRows(queryToRows(next.filter));
         setFilter(next.filter);
         setSort(next.sort ?? "");
@@ -516,10 +525,7 @@ export function FindingsView() {
   const orderParam = order === "asc" || order === "desc" ? order : null;
   const sortColumn = columnIdForSort(sortParam);
   const activeSortField = sortField(sortParam);
-  const columns = useMemo(
-    () => visibleFindingsColumns(columnPrefs, sortParam),
-    [columnPrefs, sortParam],
-  );
+  const columns = useMemo(() => visibleFindingsColumns(columnPrefs, sortParam), [columnPrefs, sortParam]);
   const showInlineIdentity = !columns.some((col) => col.id === "result_identity");
   const tableMinWidth = findingsTableMinWidth(columns, columnPrefs);
 
@@ -599,12 +605,9 @@ export function FindingsView() {
   const targets = useQuery({ queryKey: ["targets"], queryFn: () => api.listTargets() });
   const targetOpts: Option[] = useMemo(
     () => (targets.data ?? []).map((t) => ({ value: t.id, label: t.name })),
-    [targets.data],
+    [targets.data]
   );
-  const targetNames = useMemo(
-    () => new Map((targets.data ?? []).map((t) => [t.id, t.name])),
-    [targets.data],
-  );
+  const targetNames = useMemo(() => new Map((targets.data ?? []).map((t) => [t.id, t.name])), [targets.data]);
 
   const crumbs = useMemo(() => rowsToCrumbs(rows, targetOpts), [rows, targetOpts]);
   const activeCount = useMemo(() => countActiveConditions(rows), [rows]);
@@ -616,10 +619,14 @@ export function FindingsView() {
             .map((c) => `${c.connector ? `${c.connector} ` : ""}${c.field} ${c.op}${c.value ? ` ${c.value}` : ""}`)
             .join(" ")
         : "",
-    [recentCustom, targetOpts],
+    [recentCustom, targetOpts]
   );
   const recentCustomActive = recentCustom != null && JSON.stringify(recentCustom) === JSON.stringify(compiled);
-  const isDefaultView = findingsFilterPrefsAreDefault({ filter: compiled, sort: sort || null, order: sort ? order : null });
+  const isDefaultView = findingsFilterPrefsAreDefault({
+    filter: compiled,
+    sort: sort || null,
+    order: sort ? order : null,
+  });
 
   // Changing the applied filter jumps back to page 1 — but not on first mount, so
   // an offset restored from the URL survives a back-navigation.
@@ -678,8 +685,7 @@ export function FindingsView() {
       // Raw exports report lifecycle rows without a live latest occurrence in a
       // separate header, so the UI can distinguish that omission from a count
       // mismatch caused by the intentional raw join.
-      const rowCountMismatch =
-        format !== "raw" && result.rowCount !== null && result.rowCount !== expectedRows;
+      const rowCountMismatch = format !== "raw" && result.rowCount !== null && result.rowCount !== expectedRows;
       const rawMissingOccurrences = format === "raw" && result.missingOccurrences > 0;
       if (result.truncated || rowCountMismatch || rawMissingOccurrences) {
         const notices: string[] = [];
@@ -689,7 +695,7 @@ export function FindingsView() {
         }
         if (rawMissingOccurrences) {
           notices.push(
-            `The RAW export omits ${result.missingOccurrences} lifecycle findings whose latest occurrence is no longer stored.`,
+            `The RAW export omits ${result.missingOccurrences} lifecycle findings whose latest occurrence is no longer stored.`
           );
         }
         setExportNotice({
@@ -741,7 +747,10 @@ export function FindingsView() {
                   className={cn(menuItemClass, "items-start")}
                 >
                   <Check
-                    className={cn("mt-0.5 h-4 w-4 shrink-0", activePreset?.id === preset.id ? "text-indigo-600 dark:text-indigo-400" : "invisible")}
+                    className={cn(
+                      "mt-0.5 h-4 w-4 shrink-0",
+                      activePreset?.id === preset.id ? "text-indigo-600 dark:text-indigo-400" : "invisible"
+                    )}
                     aria-hidden
                   />
                   <span>
@@ -759,7 +768,10 @@ export function FindingsView() {
                     className={cn(menuItemClass, "items-start")}
                   >
                     <Check
-                      className={cn("mt-0.5 h-4 w-4 shrink-0", recentCustomActive ? "text-indigo-600 dark:text-indigo-400" : "invisible")}
+                      className={cn(
+                        "mt-0.5 h-4 w-4 shrink-0",
+                        recentCustomActive ? "text-indigo-600 dark:text-indigo-400" : "invisible"
+                      )}
                       aria-hidden
                     />
                     <span className="min-w-0">
@@ -782,7 +794,11 @@ export function FindingsView() {
               {crumbs.map((b, i) => (
                 <span key={i} className="inline-flex items-center gap-1.5">
                   {b.connector && (
-                    <span className={b.connector === "or" ? "font-medium text-indigo-600 dark:text-indigo-400" : "text-neutral-400"}>
+                    <span
+                      className={
+                        b.connector === "or" ? "font-medium text-indigo-600 dark:text-indigo-400" : "text-neutral-400"
+                      }
+                    >
                       {b.connector}
                     </span>
                   )}
@@ -850,23 +866,22 @@ export function FindingsView() {
                     </DropdownMenu.CheckboxItem>
                   );
                   if (!split) return [item];
-                  return [
-                    <DropdownMenu.Separator key={`${col.id}-split`} className={menuSeparatorClass} />,
-                    item,
-                  ];
+                  return [<DropdownMenu.Separator key={`${col.id}-split`} className={menuSeparatorClass} />, item];
                 })}
                 {FINDINGS_COLUMNS.some((col) => col.width != null && columnPrefs[col.id].width !== col.width) && (
                   <>
                     <DropdownMenu.Separator className={menuSeparatorClass} />
-                    {FINDINGS_COLUMNS.filter((col) => col.width != null && columnPrefs[col.id].width !== col.width).map((col) => (
-                      <DropdownMenu.Item
-                        key={`reset-width-${col.id}`}
-                        onSelect={() => resetColumnWidth(col.id)}
-                        className={cn(columnItemCls, "text-neutral-500")}
-                      >
-                        Reset {col.label} width
-                      </DropdownMenu.Item>
-                    ))}
+                    {FINDINGS_COLUMNS.filter((col) => col.width != null && columnPrefs[col.id].width !== col.width).map(
+                      (col) => (
+                        <DropdownMenu.Item
+                          key={`reset-width-${col.id}`}
+                          onSelect={() => resetColumnWidth(col.id)}
+                          className={cn(columnItemCls, "text-neutral-500")}
+                        >
+                          Reset {col.label} width
+                        </DropdownMenu.Item>
+                      )
+                    )}
                   </>
                 )}
                 <DropdownMenu.Separator className={menuSeparatorClass} />
@@ -898,11 +913,7 @@ export function FindingsView() {
                   {total} finding{total === 1 ? "" : "s"} (current filter)
                 </div>
                 {EXPORT_FORMATS.map((f) => (
-                  <DropdownMenu.Item
-                    key={f.format}
-                    onSelect={() => void download(f.format)}
-                    className={menuItemClass}
-                  >
+                  <DropdownMenu.Item key={f.format} onSelect={() => void download(f.format)} className={menuItemClass}>
                     {f.label}
                   </DropdownMenu.Item>
                 ))}
@@ -936,67 +947,72 @@ export function FindingsView() {
         <>
           <Card>
             <Table className="table-fixed" style={{ minWidth: tableMinWidth, width: "100%" }}>
-                <colgroup>
-                  {columns.map((col) => (
-                    <col key={col.id} style={{ width: columnPrefs[col.id].width }} />
-                  ))}
-                  <col />
-                </colgroup>
-                <thead>
-                  <tr className="border-b border-neutral-200 bg-neutral-50/60 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
-                    {columns.map((col, index) => {
-                      const resize = resizeHandleFor(columns, index, columnPrefs);
-                      const sortKey = headerSortField(col.id);
-                      const sorted = sortKey != null && activeSortField === sortKey;
-                      const ariaSort = sorted ? (orderParam === "asc" ? "ascending" : "descending") : "none";
-                      return (
-                        <th key={col.id} scope="col" aria-sort={sortKey ? ariaSort : undefined} className="relative px-3 py-2.5 font-medium whitespace-nowrap">
-                          {sortKey ? (
-                            <button
-                              type="button"
-                              className="inline-flex max-w-full items-center gap-1 truncate rounded-sm hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-                              onClick={() => toggleSort(sortKey)}
-                            >
-                              <span className="truncate">{col.label}</span>
-                              <span aria-hidden="true" className={sorted ? "text-indigo-600" : "text-neutral-300"}>
-                                {sorted ? (orderParam === "asc" ? "↑" : "↓") : "↕"}
-                              </span>
-                            </button>
-                          ) : (
-                            <span className="block truncate">{col.label}</span>
-                          )}
-                          {resize && (
-                            <ColumnResizeHandle
-                              target={resize}
-                              onPreview={previewColumnWidth}
-                              onCommit={commitColumnWidth}
-                              onReset={resetColumnWidth}
-                            />
-                          )}
-                        </th>
-                      );
-                    })}
-                    <th role="presentation" className="p-0" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((f) => (
-                    <TRow key={f.id} onClick={() => navigate(`/findings/${f.id}`)} className="group/finding">
-                      {columns.map((col) => (
-                        <td key={col.id} className="max-w-0 overflow-hidden px-3 py-2.5">
-                          <FindingCellSwitch
-                            id={col.id}
-                            finding={f}
-                            targetNames={targetNames}
-                            showInlineIdentity={showInlineIdentity}
+              <colgroup>
+                {columns.map((col) => (
+                  <col key={col.id} style={{ width: columnPrefs[col.id].width }} />
+                ))}
+                <col />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-neutral-200 bg-neutral-50/60 text-left text-xs uppercase tracking-wide text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
+                  {columns.map((col, index) => {
+                    const resize = resizeHandleFor(columns, index, columnPrefs);
+                    const sortKey = headerSortField(col.id);
+                    const sorted = sortKey != null && activeSortField === sortKey;
+                    const ariaSort = sorted ? (orderParam === "asc" ? "ascending" : "descending") : "none";
+                    return (
+                      <th
+                        key={col.id}
+                        scope="col"
+                        aria-sort={sortKey ? ariaSort : undefined}
+                        className="relative px-3 py-2.5 font-medium whitespace-nowrap"
+                      >
+                        {sortKey ? (
+                          <button
+                            type="button"
+                            className="inline-flex max-w-full items-center gap-1 truncate rounded-sm hover:text-indigo-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                            onClick={() => toggleSort(sortKey)}
+                          >
+                            <span className="truncate">{col.label}</span>
+                            <span aria-hidden="true" className={sorted ? "text-indigo-600" : "text-neutral-300"}>
+                              {sorted ? (orderParam === "asc" ? "↑" : "↓") : "↕"}
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="block truncate">{col.label}</span>
+                        )}
+                        {resize && (
+                          <ColumnResizeHandle
+                            target={resize}
+                            onPreview={previewColumnWidth}
+                            onCommit={commitColumnWidth}
+                            onReset={resetColumnWidth}
                           />
-                        </td>
-                      ))}
-                      <td role="presentation" className="p-0" />
-                    </TRow>
-                  ))}
-                  {items.length === 0 && <TableEmpty colSpan={columns.length + 1}>No findings match.</TableEmpty>}
-                </tbody>
+                        )}
+                      </th>
+                    );
+                  })}
+                  <th role="presentation" className="p-0" />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((f) => (
+                  <TRow key={f.id} onClick={() => navigate(`/findings/${f.id}`)} className="group/finding">
+                    {columns.map((col) => (
+                      <td key={col.id} className="max-w-0 overflow-hidden px-3 py-2.5">
+                        <FindingCellSwitch
+                          id={col.id}
+                          finding={f}
+                          targetNames={targetNames}
+                          showInlineIdentity={showInlineIdentity}
+                        />
+                      </td>
+                    ))}
+                    <td role="presentation" className="p-0" />
+                  </TRow>
+                ))}
+                {items.length === 0 && <TableEmpty colSpan={columns.length + 1}>No findings match.</TableEmpty>}
+              </tbody>
             </Table>
           </Card>
 

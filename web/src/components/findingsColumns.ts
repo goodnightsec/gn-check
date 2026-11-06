@@ -55,17 +55,81 @@ export interface FindingsColumn {
 // Every catalog column has a pixel width. A filler column after the last real
 // one absorbs leftover table width.
 export const FINDINGS_COLUMNS: readonly FindingsColumn[] = [
-  { id: "severity", label: "Severity", defaultVisible: true, width: 112, minWidth: 80, maxWidth: 240, sortFields: ["severity", "effective_severity"] },
-  { id: "finding", label: "Finding", defaultVisible: true, width: 320, minWidth: 96, maxWidth: 640, sortFields: ["name"] },
-  { id: "state", label: "State", defaultVisible: true, width: 140, minWidth: 72, maxWidth: 240, sortFields: ["state", "effective_state", "detection_state"] },
-  { id: "endpoint", label: "Endpoint", defaultVisible: true, width: 320, minWidth: ENDPOINT_MIN_PX, maxWidth: 640, sortFields: ["host"] },
-  { id: "last_seen", label: "Last seen", defaultVisible: true, width: 112, minWidth: 96, maxWidth: 240, sortFields: ["last_seen_at", "last_seen"] },
+  {
+    id: "severity",
+    label: "Severity",
+    defaultVisible: true,
+    width: 112,
+    minWidth: 80,
+    maxWidth: 240,
+    sortFields: ["severity", "effective_severity"],
+  },
+  {
+    id: "finding",
+    label: "Finding",
+    defaultVisible: true,
+    width: 320,
+    minWidth: 96,
+    maxWidth: 640,
+    sortFields: ["name"],
+  },
+  {
+    id: "state",
+    label: "State",
+    defaultVisible: true,
+    width: 140,
+    minWidth: 72,
+    maxWidth: 240,
+    sortFields: ["state", "effective_state", "detection_state"],
+  },
+  {
+    id: "endpoint",
+    label: "Endpoint",
+    defaultVisible: true,
+    width: 320,
+    minWidth: ENDPOINT_MIN_PX,
+    maxWidth: 640,
+    sortFields: ["host"],
+  },
+  {
+    id: "last_seen",
+    label: "Last seen",
+    defaultVisible: true,
+    width: 112,
+    minWidth: 96,
+    maxWidth: 240,
+    sortFields: ["last_seen_at", "last_seen"],
+  },
   { id: "target", label: "Target", defaultVisible: false, width: 168, minWidth: 80, maxWidth: 420, sortFields: [] },
-  { id: "first_seen", label: "First seen", defaultVisible: false, width: 112, minWidth: 96, maxWidth: 240, sortFields: ["first_seen_at", "first_seen"] },
+  {
+    id: "first_seen",
+    label: "First seen",
+    defaultVisible: false,
+    width: 112,
+    minWidth: 96,
+    maxWidth: 240,
+    sortFields: ["first_seen_at", "first_seen"],
+  },
   { id: "cve", label: "CVE", defaultVisible: false, width: 168, minWidth: 72, maxWidth: 420, sortFields: [] },
   { id: "tags", label: "Tags", defaultVisible: false, width: 180, minWidth: 72, maxWidth: 420, sortFields: [] },
-  { id: "matched_at", label: "Matched at", defaultVisible: false, width: 280, minWidth: 96, maxWidth: 640, sortFields: ["matched_at"] },
-  { id: "result_identity", label: "Result identity", defaultVisible: false, width: 280, minWidth: 96, maxWidth: 640, sortFields: ["matcher_name", "matcher"] },
+  {
+    id: "matched_at",
+    label: "Matched at",
+    defaultVisible: false,
+    width: 280,
+    minWidth: 96,
+    maxWidth: 640,
+    sortFields: ["matched_at"],
+  },
+  {
+    id: "result_identity",
+    label: "Result identity",
+    defaultVisible: false,
+    width: 280,
+    minWidth: 96,
+    maxWidth: 640,
+    sortFields: ["matcher_name", "matcher"],
+  },
 ];
 
 export interface FindingsColumnPref {
@@ -142,18 +206,13 @@ export function mergeFindingsColumns(raw: unknown): FindingsColumnPrefs {
  *  width does not survive a visibility reset. */
 export function columnPrefsToStore(
   prefs: FindingsColumnPrefs,
-  options?: { dropWidths?: boolean },
+  options?: { dropWidths?: boolean }
 ): Record<string, StoredColumn> {
   const next: Record<string, StoredColumn> = {};
   for (const col of FINDINGS_COLUMNS) {
     const entry: StoredColumn = { visible: prefs[col.id].visible };
     const width = prefs[col.id].width;
-    if (
-      !options?.dropWidths &&
-      typeof width === "number" &&
-      Number.isFinite(width) &&
-      width !== col.width
-    ) {
+    if (!options?.dropWidths && typeof width === "number" && Number.isFinite(width) && width !== col.width) {
       entry.width = width;
     }
     next[col.id] = entry;
@@ -257,7 +316,7 @@ export interface ColumnResizeTarget {
 export function resizeHandleFor(
   columns: readonly FindingsColumn[],
   hostIndex: number,
-  prefs: FindingsColumnPrefs,
+  prefs: FindingsColumnPrefs
 ): ColumnResizeTarget | null {
   if (hostIndex < 0 || hostIndex >= columns.length) return null;
   const host = columns[hostIndex];

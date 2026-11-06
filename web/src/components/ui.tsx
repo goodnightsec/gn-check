@@ -34,14 +34,10 @@ export function cn(...parts: Array<string | false | undefined | null>) {
 // directly (a react-router <Link>, a Radix trigger, an <a download>).
 
 /** focusRing is the one keyboard-focus treatment for every interactive element. */
-export const focusRing =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500";
+export const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500";
 
 /** linkClass styles an inline text link (navigation, not an action). */
-export const linkClass = cn(
-  "rounded-sm text-indigo-600 hover:underline dark:text-indigo-400",
-  focusRing,
-);
+export const linkClass = cn("rounded-sm text-indigo-600 hover:underline dark:text-indigo-400", focusRing);
 
 /** Dropdown menu surface + item classes (Radix DropdownMenu). */
 export const menuContentClass =
@@ -87,7 +83,7 @@ export function buttonClass(variant: ButtonVariant = "secondary", size: ButtonSi
     buttonVariants[variant],
     // `selected` marks a toggled-on secondary/ghost button (an open filter panel).
     selected &&
-      "border-indigo-400 bg-indigo-50 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-950",
+      "border-indigo-400 bg-indigo-50 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-950 dark:text-indigo-300 dark:hover:bg-indigo-950"
   );
 }
 
@@ -98,7 +94,14 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   selected?: boolean;
 };
 
-export function Button({ variant = "secondary", size = "md", selected, className, type = "button", ...props }: ButtonProps) {
+export function Button({
+  variant = "secondary",
+  size = "md",
+  selected,
+  className,
+  type = "button",
+  ...props
+}: ButtonProps) {
   return <button type={type} className={cn(buttonClass(variant, size, selected), className)} {...props} />;
 }
 
@@ -119,7 +122,7 @@ export function IconButton({
         "inline-flex shrink-0 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-neutral-800 dark:hover:text-neutral-200",
         size === "md" ? "h-9 w-9" : "h-8 w-8",
         focusRing,
-        className,
+        className
       )}
       {...props}
     />
@@ -158,7 +161,7 @@ export function PageHeader({
   );
   const backClass = cn(
     "mb-1 inline-flex items-center gap-0.5 rounded-sm text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200",
-    focusRing,
+    focusRing
   );
   return (
     <div className="space-y-1">
@@ -193,7 +196,7 @@ export function Card({ children, className }: { children: ReactNode; className?:
     <div
       className={cn(
         "rounded-lg border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900",
-        className,
+        className
       )}
     >
       {children}
@@ -235,7 +238,7 @@ export function CardHeader({ children, className }: { children: ReactNode; class
     <div
       className={cn(
         "flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-2.5 text-sm dark:border-neutral-800",
-        className,
+        className
       )}
     >
       {children}
@@ -269,7 +272,7 @@ export function DescriptionList({
         "grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2",
         columns === 3 && "lg:grid-cols-3",
         columns === 4 && "lg:grid-cols-4",
-        className,
+        className
       )}
     >
       {children}
@@ -315,7 +318,7 @@ export function Tabs<T extends string>({
             focusRing,
             value === t.value
               ? "border-indigo-600 text-indigo-700 dark:border-indigo-400 dark:text-indigo-300"
-              : "border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200",
+              : "border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
           )}
         >
           {t.label}
@@ -387,7 +390,7 @@ export function TRow({
         "border-b border-neutral-100 last:border-0 dark:border-neutral-800/60",
         onClick && "cursor-pointer hover:bg-neutral-50 dark:hover:bg-neutral-800/40",
         highlighted && "bg-indigo-50 dark:bg-indigo-950/30",
-        className,
+        className
       )}
     >
       {children}
@@ -597,7 +600,7 @@ export function Badge({
       className={cn(
         "inline-flex items-center whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium",
         badgeTones[tone],
-        className,
+        className
       )}
     >
       {children}
@@ -612,7 +615,7 @@ export function Tag({ children, mono, title }: { children: ReactNode; mono?: boo
       title={title}
       className={cn(
         "inline-flex items-center rounded bg-neutral-100 px-1.5 py-0.5 text-xs text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
-        mono && "font-mono",
+        mono && "font-mono"
       )}
     >
       {children}
@@ -650,7 +653,7 @@ export function SeverityBadge({ severity, recast }: { severity: string; recast?:
       className={cn(
         "inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide",
         severityStyles[s] ?? badgeTones.neutral,
-        recast && "ring-1 ring-inset ring-indigo-500",
+        recast && "ring-1 ring-inset ring-indigo-500"
       )}
     >
       {severity || "unknown"}
@@ -729,13 +732,7 @@ const findingStateStyles: Record<string, string> = {
  *  `description` is extra context that does not fit in the row (for example
  *  why auto-mitigation does not apply). It is the tooltip and part of the
  *  accessible name; the visible label stays the state. */
-export function FindingStateBadge({
-  state,
-  description,
-}: {
-  state: EffectiveState | string;
-  description?: string;
-}) {
+export function FindingStateBadge({ state, description }: { state: EffectiveState | string; description?: string }) {
   const label = STATE_LABELS[state as EffectiveState] ?? state;
   return (
     <span
@@ -743,7 +740,7 @@ export function FindingStateBadge({
       aria-label={description ? `${label}. ${description}` : undefined}
       className={cn(
         "inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium",
-        findingStateStyles[state] ?? badgeTones.neutral,
+        findingStateStyles[state] ?? badgeTones.neutral
       )}
     >
       {label}
@@ -912,14 +909,20 @@ export function Field({
 }
 
 /** FormHint is a standalone help line inside a form (not tied to one Field). */
-export function FormHint({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "warning" | "danger" }) {
+export function FormHint({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "warning" | "danger";
+}) {
   return (
     <p
       className={cn(
         "text-xs",
         tone === "neutral" && "text-neutral-500 dark:text-neutral-400",
         tone === "warning" && "text-amber-700 dark:text-amber-400",
-        tone === "danger" && "text-red-600 dark:text-red-400",
+        tone === "danger" && "text-red-600 dark:text-red-400"
       )}
     >
       {children}
@@ -989,7 +992,7 @@ export function FileInput({ className, ...props }: Omit<ComponentPropsWithRef<"i
       type="file"
       className={cn(
         "block w-full text-sm text-neutral-500 file:mr-3 file:h-9 file:cursor-pointer file:rounded-md file:border file:border-neutral-300 file:bg-white file:px-3 file:text-sm file:font-medium file:text-neutral-800 hover:file:bg-neutral-50 dark:file:border-neutral-700 dark:file:bg-neutral-800 dark:file:text-neutral-100 dark:hover:file:bg-neutral-700",
-        className,
+        className
       )}
       {...props}
     />
@@ -1043,12 +1046,12 @@ export function Modal({
           className={cn(
             "fixed left-1/2 top-1/2 z-50 max-h-[94dvh] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-neutral-200 bg-white shadow-xl focus:outline-none dark:border-neutral-800 dark:bg-neutral-900",
             sizeClass,
-            workspace ? "flex flex-col overflow-hidden p-0" : "overflow-y-auto p-5",
+            workspace ? "flex flex-col overflow-hidden p-0" : "overflow-y-auto p-5"
           )}
         >
           <div
             className={cn(
-              workspace ? "shrink-0 border-b border-neutral-200 px-5 py-4 dark:border-neutral-800" : "mb-4",
+              workspace ? "shrink-0 border-b border-neutral-200 px-5 py-4 dark:border-neutral-800" : "mb-4"
             )}
           >
             <Dialog.Title className="text-base font-semibold">{title}</Dialog.Title>
@@ -1087,7 +1090,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
   const [request, setRequest] = useState<(ConfirmOptions & { resolve: (ok: boolean) => void }) | null>(null);
   const confirm = useCallback(
     (o: ConfirmOptions) => new Promise<boolean>((resolve) => setRequest({ ...o, resolve })),
-    [],
+    []
   );
   const settle = (ok: boolean) => {
     request?.resolve(ok);
@@ -1105,10 +1108,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <ModalActions>
               <Button onClick={() => settle(false)}>Cancel</Button>
               {/* Radix focuses the first control (Cancel) on open — the safe default. */}
-              <Button
-                variant={request.tone === "primary" ? "primary" : "danger"}
-                onClick={() => settle(true)}
-              >
+              <Button variant={request.tone === "primary" ? "primary" : "danger"} onClick={() => settle(true)}>
                 {request.confirmLabel ?? "Confirm"}
               </Button>
             </ModalActions>

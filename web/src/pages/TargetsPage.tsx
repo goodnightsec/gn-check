@@ -41,7 +41,7 @@ function TargetModal({
 }) {
   const qc = useQueryClient();
   const [name, setName] = useState(
-    existing ? (duplicate ? duplicateName(existing.name, existingNames) : existing.name) : "",
+    existing ? (duplicate ? duplicateName(existing.name, existingNames) : existing.name) : ""
   );
   const [hosts, setHosts] = useState((existing?.hosts ?? []).join("\n"));
   const [tags, setTags] = useState((existing?.tags ?? []).join(", "));
@@ -90,7 +90,12 @@ function TargetModal({
           />
         </Field>
         <Field label="Tags" hint="Comma separated.">
-          <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="prod, external" className="w-full" />
+          <Input
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="prod, external"
+            className="w-full"
+          />
         </Field>
         {save.isError && <ErrorText error={save.error} />}
         <ModalActions>
@@ -193,7 +198,8 @@ export function TargetsPage() {
                             if (
                               await confirm({
                                 title: `Delete target “${t.name}”?`,
-                                description: "Schedules that use this target are deleted with it. Past scans keep their history.",
+                                description:
+                                  "Schedules that use this target are deleted with it. Past scans keep their history.",
                                 confirmLabel: "Delete target",
                               })
                             )

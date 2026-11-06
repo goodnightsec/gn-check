@@ -142,7 +142,7 @@ export function parseFindingsFilterParam(raw: string | null): FindingQuery | und
 /** resolveFindingsFilterPrefs: explicit URL params win, then stored, then defaults. */
 export function resolveFindingsFilterPrefs(
   url: { filter: string | null; sort: string | null; order: string | null },
-  storedRaw: unknown,
+  storedRaw: unknown
 ): FindingsFilterPrefs {
   const stored = mergeFindingsFilters(storedRaw);
   const defaults = defaultFindingsFilterPrefs();
@@ -152,10 +152,7 @@ export function resolveFindingsFilterPrefs(
 
   const urlSort = parseSort(url.sort);
   const sort = url.sort != null && url.sort !== "" ? urlSort : (stored?.sort ?? defaults.sort);
-  const order =
-    url.sort != null && url.sort !== ""
-      ? parseOrder(url.order)
-      : (stored?.order ?? defaults.order);
+  const order = url.sort != null && url.sort !== "" ? parseOrder(url.order) : (stored?.order ?? defaults.order);
 
   return { filter, sort, order: sort ? order : null };
 }

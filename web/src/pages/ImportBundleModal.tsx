@@ -69,7 +69,11 @@ export function ImportBundleModal({ onClose }: { onClose: () => void }) {
         {importBundle.isError && <ErrorText error={importBundle.error} />}
         <ModalActions>
           <Button onClick={onClose}>Cancel</Button>
-          <Button variant="primary" disabled={importBundle.isPending || !fileName} onClick={() => importBundle.mutate()}>
+          <Button
+            variant="primary"
+            disabled={importBundle.isPending || !fileName}
+            onClick={() => importBundle.mutate()}
+          >
             {importBundle.isPending ? "Importing…" : "Import bundle"}
           </Button>
         </ModalActions>

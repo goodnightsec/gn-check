@@ -78,7 +78,7 @@ function NodeModal({ existing, onClose }: { existing?: ScannerNode; onClose: () 
   const [cidrs, setCidrs] = useState((existing?.cidrs ?? []).join("\n"));
   const [tags, setTags] = useState((existing?.tags ?? []).join(", "));
   const [maxConcurrentScans, setMaxConcurrentScans] = useState(
-    String(existing?.max_concurrent_scans ?? defaultMaxConcurrentScans),
+    String(existing?.max_concurrent_scans ?? defaultMaxConcurrentScans)
   );
   // Per-node mTLS (#26). The server CA and client cert are public, so they are
   // returned and pre-filled; the client key is write-only, so it starts blank and
@@ -178,7 +178,12 @@ function NodeModal({ existing, onClose }: { existing?: ScannerNode; onClose: () 
             />
           </Field>
           <Field label="Tags" hint="Comma separated.">
-            <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="corp, internal" className="w-full" />
+            <Input
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="corp, internal"
+              className="w-full"
+            />
           </Field>
         </div>
 
@@ -195,9 +200,8 @@ function NodeModal({ existing, onClose }: { existing?: ScannerNode; onClose: () 
           {showTLS && (
             <div className="space-y-4">
               <p className="text-xs text-neutral-500">
-                For a node in an untrusted segment: pin its server certificate and present a client
-                certificate. Use an <code>https://</code> endpoint above. Paste PEM material. Leave
-                empty for plain HTTP + bearer token.
+                For a node in an untrusted segment: pin its server certificate and present a client certificate. Use an{" "}
+                <code>https://</code> endpoint above. Paste PEM material. Leave empty for plain HTTP + bearer token.
               </p>
               <Field label="Server CA (PEM)" hint="Pins the node's server certificate.">
                 <Textarea
@@ -267,7 +271,7 @@ export function NodesPage() {
     mutationFn: (node: ScannerNode) => api.syncNodeTemplates(node.id),
     onSuccess: (result, node) => {
       setNotice(
-        `Pushed ${result.template_count} templates to "${node.name}" (${result.templates_commit.slice(0, 12)}).`,
+        `Pushed ${result.template_count} templates to "${node.name}" (${result.templates_commit.slice(0, 12)}).`
       );
       void qc.invalidateQueries({ queryKey: ["nodes"] });
     },
@@ -319,7 +323,10 @@ export function NodesPage() {
                     <Td>
                       <div className="font-medium">{n.name}</div>
                       {n.tags.length > 0 && (
-                        <div className="mt-0.5 max-w-[12rem] truncate text-xs text-neutral-500" title={n.tags.join(", ")}>
+                        <div
+                          className="mt-0.5 max-w-[12rem] truncate text-xs text-neutral-500"
+                          title={n.tags.join(", ")}
+                        >
                           {n.tags.join(", ")}
                         </div>
                       )}
@@ -363,7 +370,10 @@ export function NodesPage() {
                         {n.templates_commit ? n.templates_commit.slice(0, 12) : "none active"}
                         {n.nuclei_version ? ` · nuclei ${n.nuclei_version}` : ""}
                       </div>
-                      <div className="mt-0.5" title={n.templates_synced_at ? new Date(n.templates_synced_at).toLocaleString() : undefined}>
+                      <div
+                        className="mt-0.5"
+                        title={n.templates_synced_at ? new Date(n.templates_synced_at).toLocaleString() : undefined}
+                      >
                         pushed {fmtTime(n.templates_synced_at)}
                       </div>
                       <div className="mt-0.5" title={n.last_seen ? new Date(n.last_seen).toLocaleString() : undefined}>
@@ -391,7 +401,8 @@ export function NodesPage() {
                               if (
                                 await confirm({
                                   title: `Delete scanner node “${n.name}”?`,
-                                  description: "Scans can no longer be dispatched to it. Past scans keep their history.",
+                                  description:
+                                    "Scans can no longer be dispatched to it. Past scans keep their history.",
                                   confirmLabel: "Delete node",
                                 })
                               )
@@ -410,9 +421,7 @@ export function NodesPage() {
         </Card>
       )}
 
-      {editing && (
-        <NodeModal existing={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />
-      )}
+      {editing && <NodeModal existing={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />}
     </Page>
   );
 }

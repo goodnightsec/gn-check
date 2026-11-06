@@ -108,24 +108,20 @@ function ScanPolicyModal({
   const qc = useQueryClient();
   const templateSets = useQuery({ queryKey: ["template-sets"], queryFn: () => api.listTemplateSets() });
   const [name, setName] = useState(
-    existing ? (duplicate ? duplicateName(existing.name, existingNames) : existing.name) : "",
+    existing ? (duplicate ? duplicateName(existing.name, existingNames) : existing.name) : ""
   );
   const [templateSetId, setTemplateSetId] = useState(existing?.template_set_id ?? "");
   const [rateLimit, setRateLimit] = useState(existing?.rate_limit != null ? String(existing.rate_limit) : "");
-  const [concurrency, setConcurrency] = useState(
-    existing?.concurrency != null ? String(existing.concurrency) : "",
-  );
-  const [timeoutSec, setTimeoutSec] = useState(
-    existing?.timeout_sec != null ? String(existing.timeout_sec) : "",
-  );
+  const [concurrency, setConcurrency] = useState(existing?.concurrency != null ? String(existing.concurrency) : "");
+  const [timeoutSec, setTimeoutSec] = useState(existing?.timeout_sec != null ? String(existing.timeout_sec) : "");
   const [maxHostError, setMaxHostError] = useState(
-    existing?.max_host_error != null ? String(existing.max_host_error) : "",
+    existing?.max_host_error != null ? String(existing.max_host_error) : ""
   );
   const [responseSizeRead, setResponseSizeRead] = useState(
-    existing?.response_size_read != null ? String(existing.response_size_read) : "",
+    existing?.response_size_read != null ? String(existing.response_size_read) : ""
   );
   const [responseSizeSave, setResponseSizeSave] = useState(
-    existing?.response_size_save != null ? String(existing.response_size_save) : "",
+    existing?.response_size_save != null ? String(existing.response_size_save) : ""
   );
   // Discovery (#86) defaults ON for a new policy (matches the backend default).
   const [discoveryEnabled, setDiscoveryEnabled] = useState(existing?.discovery_enabled ?? true);
@@ -134,20 +130,20 @@ function ScanPolicyModal({
   // null = scan-mode default (SYN on / connect off); true/false forces the
   // independent host-discovery pass on/off.
   const [discoveryHostDiscovery, setDiscoveryHostDiscovery] = useState<boolean | null>(
-    existing?.discovery_host_discovery ?? null,
+    existing?.discovery_host_discovery ?? null
   );
   const [discoveryPorts, setDiscoveryPorts] = useState(existing?.discovery_ports ?? "");
   const [discoveryTimeoutSec, setDiscoveryTimeoutSec] = useState(
-    existing?.discovery_timeout_sec != null ? String(existing.discovery_timeout_sec) : "",
+    existing?.discovery_timeout_sec != null ? String(existing.discovery_timeout_sec) : ""
   );
   const [discoveryRate, setDiscoveryRate] = useState(
-    existing?.discovery_rate != null ? String(existing.discovery_rate) : "",
+    existing?.discovery_rate != null ? String(existing.discovery_rate) : ""
   );
   const [discoveryProbeTimeoutMs, setDiscoveryProbeTimeoutMs] = useState(
-    existing?.discovery_probe_timeout_ms != null ? String(existing.discovery_probe_timeout_ms) : "",
+    existing?.discovery_probe_timeout_ms != null ? String(existing.discovery_probe_timeout_ms) : ""
   );
   const [discoveryRetries, setDiscoveryRetries] = useState(
-    existing?.discovery_retries != null ? String(existing.discovery_retries) : "",
+    existing?.discovery_retries != null ? String(existing.discovery_retries) : ""
   );
   const [notifyEnabled, setNotifyEnabled] = useState(existing?.notify_enabled === true);
   const [notifyRecipients, setNotifyRecipients] = useState((existing?.notify_recipients ?? []).join(", "));
@@ -212,7 +208,12 @@ function ScanPolicyModal({
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Name" required>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="fragile-device" className="w-full" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="fragile-device"
+              className="w-full"
+            />
           </Field>
           <Field label="Template set" required>
             <Select value={templateSetId} onChange={(e) => setTemplateSetId(e.target.value)} className="w-full">
@@ -224,9 +225,9 @@ function ScanPolicyModal({
                     ? ` (all ${t.member_count} active)`
                     : t.mode === "exclude"
                       ? ` (all ${t.member_count} active · ${t.exclusion_count} excluded)`
-                    : t.member_count === 0
-                      ? " (empty)"
-                      : ` (${t.member_count} templates)`}
+                      : t.member_count === 0
+                        ? " (empty)"
+                        : ` (${t.member_count} templates)`}
                 </option>
               ))}
             </Select>
@@ -239,66 +240,72 @@ function ScanPolicyModal({
             (and/or lower the rate) for fragile devices that Nuclei would otherwise abandon mid-scan.
           </FormHint>
           <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Rate limit (req/s)">
-            <Input
-              type="number"
-              min={1}
-              value={rateLimit}
-              onChange={(e) => setRateLimit(e.target.value)}
-              placeholder={String(DEFAULTS.rate_limit)}
-              className="w-full"
-            />
-          </Field>
-          <Field label="Concurrency">
-            <Input
-              type="number"
-              min={1}
-              value={concurrency}
-              onChange={(e) => setConcurrency(e.target.value)}
-              placeholder={String(DEFAULTS.concurrency)}
-              className="w-full"
-            />
-          </Field>
-          <Field label="Timeout (seconds)">
-            <Input
-              type="number"
-              min={1}
-              value={timeoutSec}
-              onChange={(e) => setTimeoutSec(e.target.value)}
-              placeholder={String(DEFAULTS.timeout_sec)}
-              className="w-full"
-            />
-          </Field>
-          <Field label="Max host error">
-            <Input
-              type="number"
-              min={1}
-              value={maxHostError}
-              onChange={(e) => setMaxHostError(e.target.value)}
-              placeholder={String(DEFAULTS.max_host_error)}
-              className="w-full"
-            />
-          </Field>
-          <Field label="Response size read (bytes)" hint="Max bytes read per response (nuclei -response-size-read, default 10 MiB). Lower to bound heap on large/CDN responses.">
-            <Input
-              type="number"
-              min={1}
-              value={responseSizeRead}
-              onChange={(e) => setResponseSizeRead(e.target.value)}
-              placeholder={String(DEFAULTS.response_size_read)}
-              className="w-full"
-            />
-          </Field>
-          <Field label="Response size save (bytes)" hint="Max bytes kept for output (nuclei -response-size-save, default 1 MiB).">
-            <Input
-              type="number"
-              min={1}
-              value={responseSizeSave}
-              onChange={(e) => setResponseSizeSave(e.target.value)}
-              placeholder={String(DEFAULTS.response_size_save)}
-              className="w-full"
-            />
-          </Field>
+            <Field label="Rate limit (req/s)">
+              <Input
+                type="number"
+                min={1}
+                value={rateLimit}
+                onChange={(e) => setRateLimit(e.target.value)}
+                placeholder={String(DEFAULTS.rate_limit)}
+                className="w-full"
+              />
+            </Field>
+            <Field label="Concurrency">
+              <Input
+                type="number"
+                min={1}
+                value={concurrency}
+                onChange={(e) => setConcurrency(e.target.value)}
+                placeholder={String(DEFAULTS.concurrency)}
+                className="w-full"
+              />
+            </Field>
+            <Field label="Timeout (seconds)">
+              <Input
+                type="number"
+                min={1}
+                value={timeoutSec}
+                onChange={(e) => setTimeoutSec(e.target.value)}
+                placeholder={String(DEFAULTS.timeout_sec)}
+                className="w-full"
+              />
+            </Field>
+            <Field label="Max host error">
+              <Input
+                type="number"
+                min={1}
+                value={maxHostError}
+                onChange={(e) => setMaxHostError(e.target.value)}
+                placeholder={String(DEFAULTS.max_host_error)}
+                className="w-full"
+              />
+            </Field>
+            <Field
+              label="Response size read (bytes)"
+              hint="Max bytes read per response (nuclei -response-size-read, default 10 MiB). Lower to bound heap on large/CDN responses."
+            >
+              <Input
+                type="number"
+                min={1}
+                value={responseSizeRead}
+                onChange={(e) => setResponseSizeRead(e.target.value)}
+                placeholder={String(DEFAULTS.response_size_read)}
+                className="w-full"
+              />
+            </Field>
+            <Field
+              label="Response size save (bytes)"
+              hint="Max bytes kept for output (nuclei -response-size-save, default 1 MiB)."
+            >
+              <Input
+                type="number"
+                min={1}
+                value={responseSizeSave}
+                onChange={(e) => setResponseSizeSave(e.target.value)}
+                placeholder={String(DEFAULTS.response_size_save)}
+                className="w-full"
+              />
+            </Field>
           </div>
         </FormSection>
 
@@ -332,9 +339,7 @@ function ScanPolicyModal({
                 >
                   <Select
                     value={discoveryHostDiscovery == null ? "" : discoveryHostDiscovery ? "on" : "off"}
-                    onChange={(e) =>
-                      setDiscoveryHostDiscovery(e.target.value === "" ? null : e.target.value === "on")
-                    }
+                    onChange={(e) => setDiscoveryHostDiscovery(e.target.value === "" ? null : e.target.value === "on")}
                     className="w-full"
                   >
                     <option value="">Scan-mode default (SYN on · connect off)</option>
@@ -364,7 +369,10 @@ function ScanPolicyModal({
                 />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Discovery timeout (seconds)" hint="Discovery's own budget, separate from the Nuclei timeout.">
+                <Field
+                  label="Discovery timeout (seconds)"
+                  hint="Discovery's own budget, separate from the Nuclei timeout."
+                >
                   <Input
                     type="number"
                     min={1}
@@ -376,8 +384,8 @@ function ScanPolicyModal({
                 </Field>
               </div>
               <FormHint>
-                Tuning (blank = naabu default). Lower values scan faster but can miss slow-responding or
-                (in SYN mode) lossy ports — leave blank unless discovery is too slow on your range.
+                Tuning (blank = naabu default). Lower values scan faster but can miss slow-responding or (in SYN mode)
+                lossy ports — leave blank unless discovery is too slow on your range.
               </FormHint>
               <div className="grid gap-4 sm:grid-cols-3">
                 <Field label="Rate (pkts/s)">
@@ -585,11 +593,19 @@ export function ScanPoliciesPage() {
                     <Td className="whitespace-nowrap font-medium">{p.name}</Td>
                     <Td className="text-neutral-600 dark:text-neutral-400">{templateSetName(p.template_set_id)}</Td>
                     <Td title={exec.title}>
-                      {exec.label === "defaults" ? <Muted>defaults</Muted> : <span className="font-mono text-xs">{exec.label}</span>}
+                      {exec.label === "defaults" ? (
+                        <Muted>defaults</Muted>
+                      ) : (
+                        <span className="font-mono text-xs">{exec.label}</span>
+                      )}
                     </Td>
                     <Td>{disc === "off" ? <Muted>off</Muted> : <span className="font-mono text-xs">{disc}</span>}</Td>
                     <Td>
-                      {!p.notify_enabled ? <Muted>off</Muted> : <span className="font-mono text-xs">{notifySummary(p)}</span>}
+                      {!p.notify_enabled ? (
+                        <Muted>off</Muted>
+                      ) : (
+                        <span className="font-mono text-xs">{notifySummary(p)}</span>
+                      )}
                     </Td>
                     {showActions && (
                       <RowActions
@@ -605,7 +621,8 @@ export function ScanPoliciesPage() {
                               if (
                                 await confirm({
                                   title: `Delete scan policy “${p.name}”?`,
-                                  description: "Schedules that use this policy are deleted with it. Past scans keep their history.",
+                                  description:
+                                    "Schedules that use this policy are deleted with it. Past scans keep their history.",
                                   confirmLabel: "Delete policy",
                                 })
                               )

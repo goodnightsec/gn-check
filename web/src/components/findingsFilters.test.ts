@@ -70,7 +70,9 @@ describe("mergeFindingsFilters", () => {
     expect(mergeFindingsFilters([])).toBeNull();
     expect(mergeFindingsFilters({ filter: { groups: "nope" } })).toBeNull();
     expect(mergeFindingsFilters({ filter: { groups: [{ conditions: [{ field: 1, op: "any_of" }] }] } })).toBeNull();
-    expect(mergeFindingsFilters({ filter: { groups: [{ conditions: [{ field: "state", op: "any_of", values: [1] }] }] } })).toBeNull();
+    expect(
+      mergeFindingsFilters({ filter: { groups: [{ conditions: [{ field: "state", op: "any_of", values: [1] }] }] } })
+    ).toBeNull();
   });
 
   it("round-trips a versioned store object and drops a sort without a field", () => {
@@ -97,7 +99,7 @@ describe("resolveFindingsFilterPrefs", () => {
 
   it("uses defaults when nothing is provided", () => {
     expect(resolveFindingsFilterPrefs({ filter: null, sort: null, order: null }, null)).toEqual(
-      defaultFindingsFilterPrefs(),
+      defaultFindingsFilterPrefs()
     );
   });
 
@@ -110,10 +112,7 @@ describe("resolveFindingsFilterPrefs", () => {
       groups: [{ conditions: [{ field: "severity", op: "any_of", values: ["critical"] }] }],
     };
     expect(
-      resolveFindingsFilterPrefs(
-        { filter: JSON.stringify(urlFilter), sort: "name", order: "asc" },
-        stored,
-      ),
+      resolveFindingsFilterPrefs({ filter: JSON.stringify(urlFilter), sort: "name", order: "asc" }, stored)
     ).toEqual({ filter: urlFilter, sort: "name", order: "asc" });
   });
 
@@ -124,15 +123,17 @@ describe("resolveFindingsFilterPrefs", () => {
       order: customPrefs.order,
     });
     expect(resolveFindingsFilterPrefs({ filter: "{", sort: null, order: null }, "garbage")).toEqual(
-      defaultFindingsFilterPrefs(),
+      defaultFindingsFilterPrefs()
     );
   });
 
   it("keeps stored sort when only the filter is in the URL", () => {
     const urlFilter = defaultFindingsFilter();
-    expect(
-      resolveFindingsFilterPrefs({ filter: JSON.stringify(urlFilter), sort: null, order: null }, stored),
-    ).toEqual({ filter: urlFilter, sort: "severity", order: "desc" });
+    expect(resolveFindingsFilterPrefs({ filter: JSON.stringify(urlFilter), sort: null, order: null }, stored)).toEqual({
+      filter: urlFilter,
+      sort: "severity",
+      order: "desc",
+    });
   });
 });
 
@@ -150,7 +151,7 @@ describe("localStorage read/write", () => {
     globalThis.localStorage = memoryStorage();
     writeStoredFindingsFilters(customPrefs);
     expect(JSON.parse(localStorage.getItem(FINDINGS_FILTERS_KEY) ?? "")).toEqual(
-      findingsFilterPrefsToStore(customPrefs),
+      findingsFilterPrefsToStore(customPrefs)
     );
     expect(mergeFindingsFilters(readStoredFindingsFilters())).toEqual(customPrefs);
 
@@ -229,7 +230,9 @@ describe("recent custom filter", () => {
   });
 
   it("does not treat a stale Expiring acceptances window as custom", () => {
-    const lastWeek = rowsToQuery(FINDINGS_PRESETS.find((p) => p.id === "expiring")!.rows(new Date("2026-09-20T12:00:00Z")));
+    const lastWeek = rowsToQuery(
+      FINDINGS_PRESETS.find((p) => p.id === "expiring")!.rows(new Date("2026-09-20T12:00:00Z"))
+    );
     expect(isExpiringAcceptancesWindow(lastWeek)).toBe(true);
     expect(isRecentCustomCandidate(lastWeek, now)).toBe(false);
   });

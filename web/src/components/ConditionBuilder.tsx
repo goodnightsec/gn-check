@@ -40,25 +40,67 @@ const TYPE_OPTS: Option[] = [
 ].map((t) => ({ value: t, label: t }));
 
 const FIELDS: FieldDef[] = [
-  { value: "name", label: "Name / template", kind: "text", ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"] },
+  {
+    value: "name",
+    label: "Name / template",
+    kind: "text",
+    ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"],
+  },
   { value: "severity", label: "Severity", kind: "enum", ops: ["any_of", "none_of"], options: SEVERITY_OPTS },
   { value: "state", label: "State", kind: "enum", ops: ["any_of", "none_of"], options: STATE_OPTS },
   { value: "disposition", label: "Disposition", kind: "enum", ops: ["any_of", "none_of"], options: DISPOSITION_OPTS },
   { value: "target", label: "Target", kind: "enum", ops: ["any_of", "none_of"] },
-  { value: "host", label: "Host", kind: "text", ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"] },
-  { value: "matcher", label: "Matcher", kind: "text", ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"] },
-  { value: "extracted_result", label: "Extracted result", kind: "text", ops: ["contains", "not_contains", "is_empty", "is_not_empty"] },
-  { value: "matched_at", label: "Matched at", kind: "text", ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"] },
+  {
+    value: "host",
+    label: "Host",
+    kind: "text",
+    ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"],
+  },
+  {
+    value: "matcher",
+    label: "Matcher",
+    kind: "text",
+    ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"],
+  },
+  {
+    value: "extracted_result",
+    label: "Extracted result",
+    kind: "text",
+    ops: ["contains", "not_contains", "is_empty", "is_not_empty"],
+  },
+  {
+    value: "matched_at",
+    label: "Matched at",
+    kind: "text",
+    ops: ["contains", "not_contains", "starts_with", "is_empty", "is_not_empty"],
+  },
   { value: "type", label: "Type", kind: "enum", ops: ["any_of", "none_of"], options: TYPE_OPTS },
   { value: "first_seen_at", label: "First seen", kind: "time", ops: ["after", "before", "between"] },
   { value: "last_seen_at", label: "Last seen", kind: "time", ops: ["after", "before", "between"] },
   { value: "cve", label: "CVE", kind: "text", ops: ["contains", "not_contains", "is_empty", "is_not_empty"] },
   { value: "tag", label: "Tag", kind: "tags", ops: ["any_of", "none_of", "is_empty", "is_not_empty"] },
-  { value: "recast_severity", label: "Recast severity", kind: "enum", ops: ["any_of", "none_of", "is_empty", "is_not_empty"], options: SEVERITY_OPTS },
-  { value: "observed_severity", label: "Observed severity", kind: "enum", ops: ["any_of", "none_of"], options: SEVERITY_OPTS },
+  {
+    value: "recast_severity",
+    label: "Recast severity",
+    kind: "enum",
+    ops: ["any_of", "none_of", "is_empty", "is_not_empty"],
+    options: SEVERITY_OPTS,
+  },
+  {
+    value: "observed_severity",
+    label: "Observed severity",
+    kind: "enum",
+    ops: ["any_of", "none_of"],
+    options: SEVERITY_OPTS,
+  },
   { value: "accept_expires_at", label: "Accept expires", kind: "time", ops: ["after", "before", "between"] },
   { value: "times_mitigated", label: "Times mitigated", kind: "number", ops: ["gte", "gt", "eq", "neq", "lt", "lte"] },
-  { value: "occurrence_count", label: "Occurrence count", kind: "number", ops: ["gt", "gte", "eq", "neq", "lt", "lte"] },
+  {
+    value: "occurrence_count",
+    label: "Occurrence count",
+    kind: "number",
+    ops: ["gt", "gte", "eq", "neq", "lt", "lte"],
+  },
   { value: "auto_mitigation_eligible", label: "Auto-mitigation", kind: "boolean", ops: ["is", "is_not"] },
 ];
 
@@ -149,7 +191,9 @@ export function rowsToQuery(rows: Row[]): FindingQuery {
   const groups: { conditions: { field: string; op: string; values?: string[] }[] }[] = [];
   rows.forEach((r, i) => {
     if (!rowComplete(r)) return;
-    const cond = opNeedsValue(r.op) ? { field: r.field, op: r.op, values: queryValues(r) } : { field: r.field, op: r.op };
+    const cond = opNeedsValue(r.op)
+      ? { field: r.field, op: r.op, values: queryValues(r) }
+      : { field: r.field, op: r.op };
     if (i === 0 || r.connector === "or" || groups.length === 0) groups.push({ conditions: [cond] });
     else groups[groups.length - 1].conditions.push(cond);
   });
@@ -163,7 +207,9 @@ export function queryToRows(q: FindingQuery): Row[] {
   const rows: Row[] = [];
   (q.groups ?? []).forEach((g, gi) => {
     (g.conditions ?? []).forEach((c, ci) => {
-      rows.push(makeRow({ connector: gi > 0 && ci === 0 ? "or" : "and", field: c.field, op: c.op, values: c.values ?? [] }));
+      rows.push(
+        makeRow({ connector: gi > 0 && ci === 0 ? "or" : "and", field: c.field, op: c.op, values: c.values ?? [] })
+      );
     });
   });
   return rows;
@@ -235,7 +281,7 @@ export function ConditionBuilder({
         // so compileTimeCondition receives exactly one value.
         if (patch.op) merged.values = valuesAfterOpChange(patch.op, merged.values);
         return merged;
-      }),
+      })
     );
 
   const addRow = () => onChange([...rows, makeRow()]);
@@ -291,7 +337,11 @@ export function ConditionBuilder({
                     onChange={(vals) => setRow(r.id, { values: vals })}
                   />
                 ) : def.kind === "tags" ? (
-                  <TokenInput values={r.values} onChange={(vals) => setRow(r.id, { values: vals })} placeholder="add value…" />
+                  <TokenInput
+                    values={r.values}
+                    onChange={(vals) => setRow(r.id, { values: vals })}
+                    placeholder="add value…"
+                  />
                 ) : def.kind === "boolean" ? (
                   <Select
                     value={r.values[0] ?? ""}
@@ -318,14 +368,19 @@ export function ConditionBuilder({
                 ) : def.kind === "time" ? (
                   <div className="flex flex-nowrap items-center gap-2">
                     <label className="flex shrink-0 items-center gap-1.5">
-                      {r.op === "between" ? (
-                        <span className="text-xs text-neutral-500">From</span>
-                      ) : null}
+                      {r.op === "between" ? <span className="text-xs text-neutral-500">From</span> : null}
                       <Input
                         type="date"
                         value={dateInputValue(r.values[0])}
                         onChange={(e) =>
-                          setRow(r.id, { values: r.op === "between" ? [e.target.value, r.values[1] ?? ""] : e.target.value ? [e.target.value] : [] })
+                          setRow(r.id, {
+                            values:
+                              r.op === "between"
+                                ? [e.target.value, r.values[1] ?? ""]
+                                : e.target.value
+                                  ? [e.target.value]
+                                  : [],
+                          })
                         }
                         aria-label={r.op === "between" ? "From date" : "Date"}
                         className="w-40 shrink-0"

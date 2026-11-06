@@ -3,7 +3,23 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { resultIdentityLine, resultIdentityTitle } from "./findingsColumns";
-import { Card, cn, ErrorText, focusRing, Input, Muted, OffsetPager, SeverityBadge, Spinner, Table, TableEmpty, Td, Th, THead, TRow } from "./ui";
+import {
+  Card,
+  cn,
+  ErrorText,
+  focusRing,
+  Input,
+  Muted,
+  OffsetPager,
+  SeverityBadge,
+  Spinner,
+  Table,
+  TableEmpty,
+  Td,
+  Th,
+  THead,
+  TRow,
+} from "./ui";
 
 const SEVERITIES = ["critical", "high", "medium", "low", "info"];
 const PAGE_SIZE = 50;
@@ -54,7 +70,12 @@ export function ScanFindingsView({ scanId }: { scanId: string }) {
         <div className="flex flex-wrap items-end gap-3">
           <label className="space-y-1">
             <span className="block text-xs font-medium text-neutral-500">Search (name or template)</span>
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. ssl, log4j…" className="w-56 shrink-0" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="e.g. ssl, log4j…"
+              className="w-56 shrink-0"
+            />
           </label>
           <div className="space-y-1">
             <span className="block text-xs font-medium text-neutral-500">Severity</span>
@@ -72,7 +93,7 @@ export function ScanFindingsView({ scanId }: { scanId: string }) {
                       focusRing,
                       active
                         ? sevChip[s]
-                        : "border-neutral-300 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800",
+                        : "border-neutral-300 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
                     )}
                   >
                     {s}
@@ -112,7 +133,7 @@ export function ScanFindingsView({ scanId }: { scanId: string }) {
                     </Td>
                     <Td>
                       <div>{f.name || <Muted />}</div>
-                      {(f.matcher_name || f.extractor_name || f.extracted_results?.length) ? (
+                      {f.matcher_name || f.extractor_name || f.extracted_results?.length ? (
                         <div className="truncate font-mono text-[11px] text-neutral-500" title={resultIdentityTitle(f)}>
                           {resultIdentityLine(f)}
                         </div>

@@ -80,7 +80,8 @@ function RunScanModal({ onClose }: { onClose: () => void }) {
               Runs the <span className="font-medium">{selectedPolicy.name}</span> policy
               {targetId ? (
                 <>
-                  {" "}against <span className="font-medium">{targetName(targetId)}</span>
+                  {" "}
+                  against <span className="font-medium">{targetName(targetId)}</span>
                 </>
               ) : null}
               .
@@ -220,7 +221,8 @@ export function ScansPage() {
                               if (
                                 await confirm({
                                   title: `Stop scan ${short}?`,
-                                  description: "The scanner node cancels the run. Results collected so far are not ingested.",
+                                  description:
+                                    "The scanner node cancels the run. Results collected so far are not ingested.",
                                   confirmLabel: "Stop scan",
                                 })
                               )

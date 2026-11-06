@@ -319,7 +319,7 @@ export interface Schedule {
   name: string;
   scan_policy_id: string;
   target_id: string;
-	cron: string;
+  cron: string;
   timezone: string;
   enabled: boolean;
   next_run_at?: string;
@@ -487,7 +487,7 @@ export type ImportCoverageMode = "ignore" | "trust";
 export async function importScanBundle(
   file: File,
   conflict: "error" | "duplicate" = "error",
-  coverage: ImportCoverageMode = "ignore",
+  coverage: ImportCoverageMode = "ignore"
 ): Promise<ImportScanBundleResponse> {
   const params = new URLSearchParams({ conflict, coverage });
   const res = await fetch(`/api/scans/import?${params.toString()}`, {
@@ -543,12 +543,7 @@ export const DISPOSITION_LABELS: Record<Disposition, string> = {
 
 // DetectionState is derived from scan observation; EffectiveState overlays the
 // disposition (accepted / false_positive win) on top of it.
-export type DetectionState =
-  | "new"
-  | "active"
-  | "resurfaced"
-  | "mitigated"
-  | "previously_mitigated";
+export type DetectionState = "new" | "active" | "resurfaced" | "mitigated" | "previously_mitigated";
 export type EffectiveState = DetectionState | "accepted" | "false_positive";
 export const EFFECTIVE_STATES: EffectiveState[] = [
   "new",
@@ -766,10 +761,7 @@ export interface FindingsExportDownload {
   missingOccurrences: number;
 }
 
-async function fetchFindingsExport(
-  format: ExportFormat,
-  q: FindingsQuery = {},
-): Promise<FindingsExportDownload> {
+async function fetchFindingsExport(format: ExportFormat, q: FindingsQuery = {}): Promise<FindingsExportDownload> {
   const res = await fetch(findingsExportUrl(format, q), { credentials: "same-origin" });
   if (!res.ok) {
     const text = (await res.text()).trim();
@@ -830,7 +822,7 @@ async function requestYAML<T>(method: string, path: string, yaml: string): Promi
 async function uploadArchive(
   path: string,
   file: File,
-  conflict: TemplateImportConflict,
+  conflict: TemplateImportConflict
 ): Promise<TemplateImportResponse> {
   const form = new FormData();
   form.set("file", file);
@@ -884,22 +876,17 @@ export const api = {
 
   listTargets: () => request<Target[]>("GET", "/api/targets"),
   createTarget: (t: Partial<Target>) => request<Target>("POST", "/api/targets", t),
-  updateTarget: (id: string, t: Partial<Target>) =>
-    request<Target>("PUT", `/api/targets/${id}`, t),
+  updateTarget: (id: string, t: Partial<Target>) => request<Target>("PUT", `/api/targets/${id}`, t),
   deleteTarget: (id: string) => request<void>("DELETE", `/api/targets/${id}`),
 
   // Scanner nodes (#22). Reads are viewer; create/update/delete are admin. The
   // token is write-only — never returned, blank on update keeps the stored one.
   listNodes: () => request<ScannerNode[]>("GET", "/api/nodes"),
   createNode: (n: ScannerNodeInput) => request<ScannerNode>("POST", "/api/nodes", n),
-  updateNode: (id: string, n: ScannerNodeInput) =>
-    request<ScannerNode>("PUT", `/api/nodes/${id}`, n),
+  updateNode: (id: string, n: ScannerNodeInput) => request<ScannerNode>("PUT", `/api/nodes/${id}`, n),
   deleteNode: (id: string) => request<void>("DELETE", `/api/nodes/${id}`),
   syncNodeTemplates: (id: string) =>
-    request<{ templates_commit: string; template_count: number }>(
-      "POST",
-      `/api/nodes/${id}/templates/sync`,
-    ),
+    request<{ templates_commit: string; template_count: number }>("POST", `/api/nodes/${id}/templates/sync`),
 
   listTemplates: (q: TemplatesQuery = {}) => {
     const p = new URLSearchParams();
@@ -925,51 +912,33 @@ export const api = {
     if (q.order) p.set("order", q.order);
     if (q.include_unavailable) p.set("include_unavailable", "true");
     const qs = p.toString();
-    return request<{ ids: string[] }>(
-      "GET",
-      qs ? `/api/templates/ids?${qs}` : "/api/templates/ids",
-    );
+    return request<{ ids: string[] }>("GET", qs ? `/api/templates/ids?${qs}` : "/api/templates/ids");
   },
-  getTemplate: (id: string) =>
-    request<TemplateDetail>("GET", `/api/templates/${encodeURIComponent(id)}`),
+  getTemplate: (id: string) => request<TemplateDetail>("GET", `/api/templates/${encodeURIComponent(id)}`),
   createTemplate: (yaml: string) => requestYAML<TemplateDetail>("POST", "/api/templates", yaml),
   updateTemplate: (id: string, yaml: string) =>
     requestYAML<TemplateDetail>("PUT", `/api/templates/${encodeURIComponent(id)}`, yaml),
-  deleteTemplate: (id: string) =>
-    request<void>("DELETE", `/api/templates/${encodeURIComponent(id)}`),
+  deleteTemplate: (id: string) => request<void>("DELETE", `/api/templates/${encodeURIComponent(id)}`),
   getTemplateSync: () => request<TemplateSyncStatus>("GET", "/api/templates/sync"),
-  requestTemplateSync: () =>
-    request<{ queued: boolean }>("POST", "/api/templates/sync"),
-  updateTemplateSyncConfig: (
-    body: { repo?: string; ref: string; preview_commit?: string },
-    opts?: RequestOptions,
-  ) => request<TemplateSyncStatus>("PUT", "/api/templates/sync/config", body, opts),
-  templateSyncPreview: (
-    body: { repo?: string; ref: string },
-    opts?: RequestOptions,
-  ) => request<TemplateSyncPreview>("POST", "/api/templates/sync/preview", body, opts),
+  requestTemplateSync: () => request<{ queued: boolean }>("POST", "/api/templates/sync"),
+  updateTemplateSyncConfig: (body: { repo?: string; ref: string; preview_commit?: string }, opts?: RequestOptions) =>
+    request<TemplateSyncStatus>("PUT", "/api/templates/sync/config", body, opts),
+  templateSyncPreview: (body: { repo?: string; ref: string }, opts?: RequestOptions) =>
+    request<TemplateSyncPreview>("POST", "/api/templates/sync/preview", body, opts),
   listTemplateSyncRuns: (limit = 20, offset = 0) =>
-    request<Page<TemplateSyncRun>>(
-      "GET",
-      `/api/templates/sync-runs?limit=${limit}&offset=${offset}`,
-    ),
+    request<Page<TemplateSyncRun>>("GET", `/api/templates/sync-runs?limit=${limit}&offset=${offset}`),
   templateExportURL,
   downloadTemplates: (ids: string[], format: TemplateArchiveFormat) =>
-    downloadArchive(
-      templateExportURL(ids, format),
-      format === "yaml" ? "templates.tar.gz" : "templates.json",
-    ),
+    downloadArchive(templateExportURL(ids, format), format === "yaml" ? "templates.tar.gz" : "templates.json"),
   importTemplates: (file: File, conflict: TemplateImportConflict) =>
     uploadArchive("/api/templates/import", file, conflict),
 
   listTemplateSets: () => request<TemplateSet[]>("GET", "/api/template-sets"),
-  createTemplateSet: (t: Partial<TemplateSet>) =>
-    request<TemplateSet>("POST", "/api/template-sets", t),
+  createTemplateSet: (t: Partial<TemplateSet>) => request<TemplateSet>("POST", "/api/template-sets", t),
   updateTemplateSet: (id: string, t: Partial<TemplateSet>) =>
     request<TemplateSet>("PUT", `/api/template-sets/${id}`, t),
   deleteTemplateSet: (id: string) => request<void>("DELETE", `/api/template-sets/${id}`),
-  listTemplateSetMembers: (id: string) =>
-    request<Template[]>("GET", `/api/template-sets/${id}/members`),
+  listTemplateSetMembers: (id: string) => request<Template[]>("GET", `/api/template-sets/${id}/members`),
   replaceTemplateSetMembers: (id: string, templateIDs: string[]) =>
     request<TemplateSet>("PUT", `/api/template-sets/${id}/members`, {
       template_ids: templateIDs,
@@ -978,37 +947,29 @@ export const api = {
     request<TemplateSet>("POST", `/api/template-sets/${id}/members`, {
       template_ids: templateIDs,
     }),
-  listTemplateSetExclusions: (id: string) =>
-    request<Template[]>("GET", `/api/template-sets/${id}/exclusions`),
+  listTemplateSetExclusions: (id: string) => request<Template[]>("GET", `/api/template-sets/${id}/exclusions`),
   replaceTemplateSetExclusions: (id: string, templateIDs: string[]) =>
     request<TemplateSet>("PUT", `/api/template-sets/${id}/exclusions`, {
       template_ids: templateIDs,
     }),
   templateSetExportURL,
   downloadTemplateSet: (id: string, format: TemplateArchiveFormat) =>
-    downloadArchive(
-      templateSetExportURL(id, format),
-      format === "yaml" ? "template-set.tar.gz" : "template-set.json",
-    ),
+    downloadArchive(templateSetExportURL(id, format), format === "yaml" ? "template-set.tar.gz" : "template-set.json"),
   importTemplateSet: (file: File, conflict: TemplateImportConflict) =>
     uploadArchive("/api/template-sets/import", file, conflict),
 
   // Scan policies (#87). Reads are viewer; create/edit are operator; delete is
   // admin. A null knob means "use the built-in default" for that field.
   listScanPolicies: () => request<ScanPolicy[]>("GET", "/api/scan-policies"),
-  createScanPolicy: (p: Partial<ScanPolicy>) =>
-    request<ScanPolicy>("POST", "/api/scan-policies", p),
-  updateScanPolicy: (id: string, p: Partial<ScanPolicy>) =>
-    request<ScanPolicy>("PUT", `/api/scan-policies/${id}`, p),
+  createScanPolicy: (p: Partial<ScanPolicy>) => request<ScanPolicy>("POST", "/api/scan-policies", p),
+  updateScanPolicy: (id: string, p: Partial<ScanPolicy>) => request<ScanPolicy>("PUT", `/api/scan-policies/${id}`, p),
   deleteScanPolicy: (id: string) => request<void>("DELETE", `/api/scan-policies/${id}`),
 
   listSchedules: () => request<Schedule[]>("GET", "/api/schedules"),
   createSchedule: (s: Partial<Schedule>) => request<Schedule>("POST", "/api/schedules", s),
-  updateSchedule: (id: string, s: Partial<Schedule>) =>
-    request<Schedule>("PUT", `/api/schedules/${id}`, s),
+  updateSchedule: (id: string, s: Partial<Schedule>) => request<Schedule>("PUT", `/api/schedules/${id}`, s),
   deleteSchedule: (id: string) => request<void>("DELETE", `/api/schedules/${id}`),
-  runSchedule: (id: string) =>
-    request<{ scan_id: string }>("POST", `/api/schedules/${id}/run`),
+  runSchedule: (id: string) => request<{ scan_id: string }>("POST", `/api/schedules/${id}/run`),
 
   // Service accounts (admin only). create/rotate return the plaintext token once.
   listServiceAccounts: () => request<ServiceAccount[]>("GET", "/api/service-accounts"),
@@ -1080,14 +1041,14 @@ export const api = {
     const qs = p.toString();
     return request<Page<Occurrence>>(
       "GET",
-      qs ? `/api/findings/${id}/occurrences?${qs}` : `/api/findings/${id}/occurrences`,
+      qs ? `/api/findings/${id}/occurrences?${qs}` : `/api/findings/${id}/occurrences`
     );
   },
   getOccurrence: (id: number | string) => request<OccurrenceDetail>("GET", `/api/occurrences/${id}`),
   // Analyst overlays (operator only). accept_expires_at applies to "accepted".
   setDisposition: (
     id: number | string,
-    body: { disposition: Disposition; note?: string; accept_expires_at?: string | null },
+    body: { disposition: Disposition; note?: string; accept_expires_at?: string | null }
   ) => request<FindingDetail>("PATCH", `/api/findings/${id}/disposition`, body),
   // Recast Risk: override severity; pass severity "" to clear the recast.
   recastSeverity: (id: number | string, body: { severity: string; note?: string }) =>
@@ -1103,6 +1064,9 @@ export const api = {
     if (q.limit != null) p.set("limit", String(q.limit));
     if (q.offset != null) p.set("offset", String(q.offset));
     const qs = p.toString();
-    return request<Page<Occurrence>>("GET", qs ? `/api/scans/${scanId}/findings?${qs}` : `/api/scans/${scanId}/findings`);
+    return request<Page<Occurrence>>(
+      "GET",
+      qs ? `/api/scans/${scanId}/findings?${qs}` : `/api/scans/${scanId}/findings`
+    );
   },
 };

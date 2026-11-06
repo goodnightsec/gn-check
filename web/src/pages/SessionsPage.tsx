@@ -147,7 +147,8 @@ export function SessionsPage() {
           Each row is one live server-side session. Its <code>id</code> is the stored hash, not the raw cookie value.
           &ldquo;Subject&rdquo; is the OIDC <code>sub</code> claim (opaque, often a UUID) — not the email. Revoking by
           subject is the offboarding path: it terminates every live session for that <code>sub</code> at once (404 if no
-          live session matches, so a typo does not silently no-op). Filtering is server-side and global across all pages.
+          live session matches, so a typo does not silently no-op). Filtering is server-side and global across all
+          pages.
         </FormHint>
       </Card>
 
