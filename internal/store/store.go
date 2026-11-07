@@ -928,7 +928,7 @@ func scanListWhere(f ScanListFilter) (string, []any) {
 		nPat := push(pat)
 		nPrefix := push(prefix)
 		conds = append(conds, fmt.Sprintf(
-			`(t.name ILIKE $%d ESCAPE '' OR sp.name ILIKE $%d ESCAPE '' OR sch.name ILIKE $%d ESCAPE '' OR s.id::text ILIKE $%d ESCAPE '')`,
+			`(t.name ILIKE $%d ESCAPE '\' OR sp.name ILIKE $%d ESCAPE '\' OR sch.name ILIKE $%d ESCAPE '\' OR s.id::text ILIKE $%d ESCAPE '\')`,
 			nPat, nPat, nPat, nPrefix,
 		))
 	}

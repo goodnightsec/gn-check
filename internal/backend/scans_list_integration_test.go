@@ -126,13 +126,48 @@ func TestListScansFilterPaginationPostgres(t *testing.T) {
 
 	t.Run("like metachar escape", func(t *testing.T) {
 		// A query of "%" alone would match everything if unescaped; with escape it
-		// matches only names containing a literal percent (none here).
+		// matches only names containing a literal percent (none yet).
 		_, total, err := st.ListScans(ctx, store.ScanListFilter{Query: "%", Limit: 50})
 		if err != nil {
 			t.Fatalf("list: %v", err)
 		}
 		if total != 0 {
 			t.Fatalf("literal %% query total=%d, want 0", total)
+		}
+	})
+
+	t.Run("like metachar literal match", func(t *testing.T) {
+		// Each literal target has a decoy that a wildcard reading of the
+		// metacharacter would also match; only the literal one may come back.
+		cases := []struct{ name, literal, decoy, query string }{
+			{"percent", "lit-100%-" + suffix, "lit-100x-" + suffix, "100%-" + suffix},
+			{"underscore", "lit-a_b-" + suffix, "lit-axb-" + suffix, "a_b-" + suffix},
+			{"backslash", `lit-c\d-` + suffix, "lit-cd-" + suffix, `c\d-` + suffix},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				var want string
+				for _, n := range []string{tc.literal, tc.decoy} {
+					tg, err := st.CreateTarget(ctx, store.Target{Name: n, Hosts: []string{"lit.invalid"}})
+					if err != nil {
+						t.Fatalf("target %q: %v", n, err)
+					}
+					id, err := st.CreateScan(ctx, types.ScanSpec{Targets: tg.Hosts}, store.ScanLink{TargetID: tg.ID})
+					if err != nil {
+						t.Fatalf("scan %q: %v", n, err)
+					}
+					if n == tc.literal {
+						want = id
+					}
+				}
+				rows, total, err := st.ListScans(ctx, store.ScanListFilter{Query: tc.query, Limit: 50})
+				if err != nil {
+					t.Fatalf("list: %v", err)
+				}
+				if total != 1 || len(rows) != 1 || rows[0].ID != want {
+					t.Fatalf("query %q: total=%d rows=%d, want only the scan of %q", tc.query, total, len(rows), tc.literal)
+				}
+			})
 		}
 	})
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { scanListSearch, type ScanListChange, type ScanListUrlState } from "./scansListParams";
 import { api } from "../api";
 import { hasRole, useMe } from "../auth";
 import {
@@ -158,17 +159,13 @@ export function ScansPage() {
   }, [qParam, fromParam, toParam]);
 
   const applyFilters = useCallback(
-    (next: { q?: string; started_from?: string; started_to?: string; offset?: number }) => {
-      const p = new URLSearchParams();
-      const q = (next.q ?? qParam).trim();
-      const from = next.started_from ?? fromParam;
-      const to = next.started_to ?? toParam;
-      const off = next.offset ?? offset;
-      if (q) p.set("q", q);
-      if (from) p.set("started_from", from);
-      if (to) p.set("started_to", to);
-      if (off > 0) p.set("offset", String(off));
-      setSearchParams(p, { replace: true });
+    (next: Partial<ScanListUrlState>, change: ScanListChange) => {
+      const { params, replace } = scanListSearch(
+        { q: qParam, started_from: fromParam, started_to: toParam, offset },
+        next,
+        change
+      );
+      setSearchParams(params, { replace });
     },
     [qParam, fromParam, toParam, offset, setSearchParams]
   );
@@ -177,7 +174,7 @@ export function ScansPage() {
   useEffect(() => {
     const t = setTimeout(() => {
       if (nameDraft.trim() === qParam.trim()) return;
-      applyFilters({ q: nameDraft, offset: 0 });
+      applyFilters({ q: nameDraft, offset: 0 }, "typing");
     }, 300);
     return () => clearTimeout(t);
   }, [nameDraft, qParam, applyFilters]);
@@ -212,18 +209,21 @@ export function ScansPage() {
   const colCount = 7 + (showActions ? 1 : 0);
 
   const onApplyTime = () => {
-    applyFilters({
-      started_from: localInputToRFC3339(fromDraft) ?? "",
-      started_to: localInputToRFC3339(toDraft) ?? "",
-      offset: 0,
-    });
+    applyFilters(
+      {
+        started_from: localInputToRFC3339(fromDraft) ?? "",
+        started_to: localInputToRFC3339(toDraft) ?? "",
+        offset: 0,
+      },
+      "time"
+    );
   };
 
   const onClearFilters = () => {
     setNameDraft("");
     setFromDraft("");
     setToDraft("");
-    setSearchParams({}, { replace: true });
+    applyFilters({}, "clear");
   };
 
   const hasFilters = !!(qParam || fromParam || toParam);
@@ -295,7 +295,7 @@ export function ScansPage() {
             offset={offset}
             total={total}
             pageSize={PAGE_SIZE}
-            onChange={(o) => applyFilters({ offset: o })}
+            onChange={(o) => applyFilters({ offset: o }, "page")}
           />
           <Card>
             <Table>
@@ -405,7 +405,7 @@ export function ScansPage() {
             offset={offset}
             total={total}
             pageSize={PAGE_SIZE}
-            onChange={(o) => applyFilters({ offset: o })}
+            onChange={(o) => applyFilters({ offset: o }, "page")}
           />
         </div>
       )}
