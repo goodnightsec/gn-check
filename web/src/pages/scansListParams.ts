@@ -8,10 +8,10 @@ export interface ScanListUrlState {
   offset: number;
 }
 
-// "typing" is the debounced name box; every other change is an explicit
-// action (pagination, applying the time range, clearing the filters) that the
-// back button should be able to undo.
-export type ScanListChange = "typing" | "page" | "time" | "clear";
+// "typing" is a debounced edit in the filter panel (name or start-time bounds);
+// every other change is an explicit action (pagination, removing one filter
+// chip, clearing all filters) that the back button should be able to undo.
+export type ScanListChange = "typing" | "page" | "remove" | "clear";
 
 export function scanListSearch(
   current: ScanListUrlState,

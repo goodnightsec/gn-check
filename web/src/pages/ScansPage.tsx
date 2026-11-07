@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Filter } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { scanListSearch, type ScanListChange, type ScanListUrlState } from "./scansListParams";
@@ -158,6 +159,8 @@ export function ScansPage() {
     setToDraft(rfc3339ToLocalInput(toParam || null));
   }, [qParam, fromParam, toParam]);
 
+  const [filterOpen, setFilterOpen] = useState(false);
+
   const applyFilters = useCallback(
     (next: Partial<ScanListUrlState>, change: ScanListChange) => {
       const { params, replace } = scanListSearch(
@@ -170,14 +173,21 @@ export function ScansPage() {
     [qParam, fromParam, toParam, offset, setSearchParams]
   );
 
-  // Debounce name search into the URL (resets offset).
+  // One apply model for every field, as on Findings: edits apply after a short
+  // debounce and reset the page. An incomplete datetime-local value reads as
+  // empty, so it applies once complete.
   useEffect(() => {
     const t = setTimeout(() => {
-      if (nameDraft.trim() === qParam.trim()) return;
-      applyFilters({ q: nameDraft, offset: 0 }, "typing");
+      const next = {
+        q: nameDraft.trim(),
+        started_from: localInputToRFC3339(fromDraft) ?? "",
+        started_to: localInputToRFC3339(toDraft) ?? "",
+      };
+      if (next.q === qParam.trim() && next.started_from === fromParam && next.started_to === toParam) return;
+      applyFilters({ ...next, offset: 0 }, "typing");
     }, 300);
     return () => clearTimeout(t);
-  }, [nameDraft, qParam, applyFilters]);
+  }, [nameDraft, fromDraft, toDraft, qParam, fromParam, toParam, applyFilters]);
 
   const listQuery = useMemo(
     () => ({
@@ -208,17 +218,6 @@ export function ScansPage() {
   const del = useMutation({ mutationFn: (id: string) => api.deleteScan(id), onSuccess: invalidate });
   const colCount = 7 + (showActions ? 1 : 0);
 
-  const onApplyTime = () => {
-    applyFilters(
-      {
-        started_from: localInputToRFC3339(fromDraft) ?? "",
-        started_to: localInputToRFC3339(toDraft) ?? "",
-        offset: 0,
-      },
-      "time"
-    );
-  };
-
   const onClearFilters = () => {
     setNameDraft("");
     setFromDraft("");
@@ -227,6 +226,11 @@ export function ScansPage() {
   };
 
   const hasFilters = !!(qParam || fromParam || toParam);
+  const chips = [
+    qParam && { key: "q" as const, label: "Name", value: qParam },
+    fromParam && { key: "started_from" as const, label: "Started from", value: new Date(fromParam).toLocaleString() },
+    toParam && { key: "started_to" as const, label: "Started to", value: new Date(toParam).toLocaleString() },
+  ].filter((c): c is { key: "q" | "started_from" | "started_to"; label: string; value: string } => !!c);
 
   return (
     <Page>
@@ -245,43 +249,84 @@ export function ScansPage() {
         }
       />
 
-      <Card className="space-y-3 p-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <Field label="Name" className="min-w-[14rem] flex-1">
-            <Input
-              value={nameDraft}
-              onChange={(e) => setNameDraft(e.target.value)}
-              placeholder="Target, policy, schedule, or scan ID…"
-              aria-label="Filter scans by name"
-              className="w-full"
-            />
-          </Field>
-          <Field label="Started from">
-            <Input
-              type="datetime-local"
-              value={fromDraft}
-              onChange={(e) => setFromDraft(e.target.value)}
-              aria-label="Started from"
-            />
-          </Field>
-          <Field label="Started to">
-            <Input
-              type="datetime-local"
-              value={toDraft}
-              onChange={(e) => setToDraft(e.target.value)}
-              aria-label="Started to"
-            />
-          </Field>
-          <div className="flex gap-2 pb-0.5">
-            <Button onClick={onApplyTime}>Apply time</Button>
-            {hasFilters && <Button onClick={onClearFilters}>Clear</Button>}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          onClick={() => setFilterOpen((v) => !v)}
+          aria-expanded={filterOpen}
+          title={filterOpen ? "Hide filter" : "Show filter"}
+          selected={filterOpen || chips.length > 0}
+        >
+          <Filter className="h-4 w-4" aria-hidden />
+          Filter
+          {chips.length > 0 && (
+            <span className="rounded bg-indigo-600 px-1.5 text-xs font-semibold text-white">{chips.length}</span>
+          )}
+        </Button>
+        {!filterOpen &&
+          (chips.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5 text-sm text-neutral-500">
+              {chips.map((c) => (
+                <span
+                  key={c.key}
+                  className="inline-flex items-center gap-1 rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                >
+                  <span className="font-medium">{c.label}</span> {c.value}
+                  <button
+                    type="button"
+                    onClick={() => applyFilters({ [c.key]: "", offset: 0 }, "remove")}
+                    className="rounded-sm text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-200"
+                    aria-label={`Remove ${c.label} filter`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-sm text-neutral-400">No filter — showing all scans</span>
+          ))}
+        {hasFilters && (
+          <Button variant="link" onClick={onClearFilters} title="Remove every scan filter">
+            Clear
+          </Button>
+        )}
+      </div>
+
+      {filterOpen && (
+        <Card className="space-y-3 p-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label="Name" className="min-w-[14rem] flex-1">
+              <Input
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                placeholder="Target, policy, schedule, or scan ID…"
+                aria-label="Filter scans by name"
+                className="w-full"
+              />
+            </Field>
+            <Field label="Started from">
+              <Input
+                type="datetime-local"
+                value={fromDraft}
+                onChange={(e) => setFromDraft(e.target.value)}
+                aria-label="Started from"
+              />
+            </Field>
+            <Field label="Started to">
+              <Input
+                type="datetime-local"
+                value={toDraft}
+                onChange={(e) => setToDraft(e.target.value)}
+                aria-label="Started to"
+              />
+            </Field>
           </div>
-        </div>
-        <FormHint>
-          Filters and page are kept in the URL. Name matches target, scan policy, and schedule names, or a scan-ID
-          prefix. Start-time bounds are inclusive; queued scans without a start time use their queue time.
-        </FormHint>
-      </Card>
+          <FormHint>
+            Name matches target, scan policy, and schedule names, or a scan-ID prefix. Start-time bounds are inclusive;
+            queued scans without a start time use their queue time.
+          </FormHint>
+        </Card>
+      )}
 
       {(cancel.isError || del.isError) && <ErrorText error={cancel.error ?? del.error} />}
 
@@ -291,12 +336,6 @@ export function ScansPage() {
         <ErrorText error={scans.error} />
       ) : (
         <div className="space-y-3">
-          <OffsetPager
-            offset={offset}
-            total={total}
-            pageSize={PAGE_SIZE}
-            onChange={(o) => applyFilters({ offset: o }, "page")}
-          />
           <Card>
             <Table>
               <THead>
@@ -304,7 +343,7 @@ export function ScansPage() {
                 <Th>Target</Th>
                 <Th>Node</Th>
                 <Th>State</Th>
-                <Th>Started</Th>
+                <Th>Created</Th>
                 <Th>Finished</Th>
                 <Th>Nuclei</Th>
                 {showActions && <Th aria-label="Actions" />}

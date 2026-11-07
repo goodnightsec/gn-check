@@ -30,13 +30,13 @@ describe("scanListSearch", () => {
   });
 
   it("replaces history only for debounced typing", () => {
-    const modes: ScanListChange[] = ["typing", "page", "time", "clear"];
+    const modes: ScanListChange[] = ["typing", "page", "remove", "clear"];
     expect(modes.map((m) => scanListSearch(empty, {}, m).replace)).toEqual([true, false, false, false]);
   });
 });
 
 describe("scans list history", () => {
-  it("back undoes pagination and time filters, typing replaces in place", async () => {
+  it("back undoes pagination, chip removal and clear; filter edits replace in place", async () => {
     const router = createMemoryRouter([{ path: "/scans", element: null }], { initialEntries: ["/scans"] });
     const apply = async (next: Partial<ScanListUrlState>, change: ScanListChange) => {
       const { params, replace } = scanListSearch(stateOf(router.state.location.search), next, change);
@@ -48,7 +48,8 @@ describe("scans list history", () => {
     expect(router.state.location.search).toBe("?q=alpha");
     await apply({ offset: 25 }, "page");
     await apply({ offset: 50 }, "page");
-    await apply({ started_from: "2026-01-01T00:00:00Z", offset: 0 }, "time");
+    await apply({ started_from: "2026-01-01T00:00:00Z", offset: 0 }, "typing");
+    await apply({ q: "", offset: 0 }, "remove");
     await apply({}, "clear");
     expect(router.state.location.search).toBe("");
 
@@ -56,8 +57,9 @@ describe("scans list history", () => {
       await router.navigate(-1);
       return router.state.location.search;
     };
+    expect(await back()).toBe("?started_from=2026-01-01T00%3A00%3A00Z");
+    // The time edit replaced the page-50 entry in place.
     expect(await back()).toBe("?q=alpha&started_from=2026-01-01T00%3A00%3A00Z");
-    expect(await back()).toBe("?q=alpha&offset=50");
     expect(await back()).toBe("?q=alpha&offset=25");
     // Both typing steps replaced the first entry in place, so no entry exists for "alp".
     expect(await back()).toBe("?q=alpha");
