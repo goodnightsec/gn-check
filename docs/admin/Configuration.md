@@ -140,7 +140,7 @@ OIDC setup, browser mutation protection, service accounts, mTLS, and session rev
 | `S3_USE_SSL` | `true` | TLS for the S3 endpoint. Set false only for local plaintext HTTP. |
 
 Compose runs unmodified [Garage](https://garagehq.deuxfleurs.fr/) (`dxflrs/garage`, AGPL-3.0)
-as the local S3 endpoint. The image tag is `${GARAGE_VERSION:-v2.3.0}`: `dxflrs/garage` publishes
+as the local S3 endpoint. The image is `${GARAGE_VERSION:-v2.3.0@sha256:…}`, the default pinned by digest: `dxflrs/garage` publishes
 no `latest` tag, so the compose file keeps `v2.3.0` as the known-good default. Set `GARAGE_VERSION`
 in `.env` to try a newer release or pin one tag for a test run. To change the default, bump the
 compose fallback after checking [garagehq.deuxfleurs.fr](https://garagehq.deuxfleurs.fr/) or the

@@ -3,7 +3,7 @@
 # ---- build the SPA (embedded into the backend binary) ----
 # Arch-independent JS build; pinned to the native platform so npm never runs
 # under emulation.
-FROM --platform=$BUILDPLATFORM node:26-alpine AS web
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS web
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
@@ -11,7 +11,7 @@ COPY web/ ./
 RUN npm run build
 
 # ---- build the backend binary (embeds web/dist), cross-compiled ----
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
@@ -43,7 +43,7 @@ RUN set -e; \
 # UBI 10 Micro ships no CA trust store at all (verified: none of the standard
 # /etc/ssl or /etc/pki paths exist), so copy a known-good bundle to a path Go's
 # crypto/x509 searches on Linux. The backend needs this for its outbound TLS.
-FROM alpine:3.24 AS certs
+FROM alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a AS certs
 RUN apk add --no-cache ca-certificates
 
 # Seed the persistent template-cache mount with runtime-user ownership. Docker
@@ -51,11 +51,11 @@ RUN apk add --no-cache ca-certificates
 # /var/lib/nsc is root-owned and the non-root backend cannot create its clone.
 # The path keeps the old short name "nsc" on purpose: installations mount
 # their named volume there, so it can't change without losing that data.
-FROM alpine:3.24 AS runtime-dirs
+FROM alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a AS runtime-dirs
 RUN mkdir -p /var/lib/nsc && chown 1001:0 /var/lib/nsc && chmod 0750 /var/lib/nsc
 
 # ---- minimal runtime: static binary on Red Hat UBI 10 Micro, non-root ----
-FROM redhat/ubi10-micro
+FROM redhat/ubi10-micro:10.2@sha256:8488f5ec082768a01d1ce4e0ef3878f782a40ff6d233afa74bc23d4e740620a4
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=runtime-dirs --chown=1001:0 /var/lib/nsc/ /var/lib/nsc/
 COPY --from=build /out/backend /backend

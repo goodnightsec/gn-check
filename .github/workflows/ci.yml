@@ -22,7 +22,7 @@ jobs:
         # Keep this server major compatible with the runner's pg_dump client:
         # pg_dump may be newer than the server, but it cannot be older. A bad
         # pairing makes the baseline-equivalence test fail with a version mismatch.
-        image: postgres:16
+        image: postgres:16@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657
         env:
           POSTGRES_DB: nsc_test
           POSTGRES_USER: postgres

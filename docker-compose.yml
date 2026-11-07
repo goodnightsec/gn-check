@@ -5,7 +5,7 @@ services:
     # Stay on 16 until a major upgrade is planned: the 18 image moved
     # PGDATA to /var/lib/postgresql/18/docker and needs a volume migration
     # (pg_upgrade or a fresh local volume) before the mount can change.
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:aa6cb33cf4c19c765cefcf48d96176258800870a9a1e930ad126200f9d825139
     environment:
       POSTGRES_USER: nuclei
       POSTGRES_PASSWORD: nuclei
@@ -27,8 +27,9 @@ services:
   # values are local-development credentials, same class as the Postgres
   # password in this file. The admin API stays on loopback inside the container.
   garage:
-    # dxflrs/garage publishes no `latest` tag. Override with GARAGE_VERSION.
-    image: dxflrs/garage:${GARAGE_VERSION:-v2.3.0}
+    # dxflrs/garage publishes no `latest` tag. Override with GARAGE_VERSION;
+    # the default is pinned by digest.
+    image: dxflrs/garage:${GARAGE_VERSION:-v2.3.0@sha256:866bd13ed2038ba7e7190e840482bc27234c4afaf77be8cfa439ae088c1e4690}
     command:
       - /garage
       - -c
@@ -61,7 +62,7 @@ services:
   # (admin/operator/viewer, password = username). Browser reaches it at
   # localhost:8082; the backend reaches it in-network at keycloak:8080.
   keycloak:
-    image: quay.io/keycloak/keycloak:26.8
+    image: quay.io/keycloak/keycloak:26.8@sha256:3879c623248408de29a5303178b5816c77e8dfef3890c361f8c0bbeaa979ba3b
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
