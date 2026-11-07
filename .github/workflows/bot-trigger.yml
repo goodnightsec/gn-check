@@ -1,0 +1,168 @@
+name: Bot trigger
+
+# Copy unchanged to .github/workflows/bot-trigger.yml in each repository,
+# private and public. When a label is set, it starts the matching bot
+# routine through the routine's webhook, so released work starts within
+# minutes instead of at the next scheduled run (procedures/rol-bot-routines.md
+# in goodnightsec/company). The scheduled runs stay as the fallback.
+#
+#   Event                                  Label              Starts
+#   Issue labeled, only in company         bot:<role>         That role's "Released issues"
+#   Pull request labeled                   needs-review       Reviewer, "Review queue"
+#   Pull request of the Developer labeled  changes-requested  Developer, "Own pull requests"
+#
+# The webhook body has only the repository, the number and the label, never
+# text from the issue or pull request. The bot reads it itself with its own
+# App token and checks who set the label.
+#
+# Secrets: each routine in the table has its own webhook, so one pair of
+# organization Actions secrets per routine, BOT_TRIGGER_<ROLE>_<ROUTINE>_URL
+# and BOT_TRIGGER_<ROLE>_<ROUTINE>_KEY:
+#   BOT_TRIGGER_<ROLE>_RELEASED_ISSUES_*     (such as ..._SECURITY_ANALYST_RELEASED_ISSUES_KEY)
+#   BOT_TRIGGER_REVIEWER_REVIEW_QUEUE_*
+#   BOT_TRIGGER_DEVELOPER_OWN_PULL_REQUESTS_*
+# Each is shared only with the repositories that start that routine: the
+# Released issues ones with company, the other two with company and with
+# each repository once it has this workflow (a maintainer adds it).
+# A label whose routine has no secret in the repository fails the run, so
+# a missing secret is seen.
+#
+# pull_request_target, not pull_request, in every repository: it runs the
+# workflow from the default branch, so a pull request cannot change what
+# runs with the secrets, and it also runs for pull requests from forks in
+# public repositories, which pull_request gives no secrets. That is safe
+# here because nothing from the pull request is checked out or run, only
+# its number goes out, and only people and Apps with triage rights can set
+# labels (SVT-9).
+#
+# No third-party actions, so nothing to pin.
+
+on:
+  issues:
+    types: [labeled]
+  pull_request_target:
+    types: [labeled]
+
+permissions: {}
+
+jobs:
+  trigger:
+    name: Start the bot
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: >-
+      startsWith(github.event.label.name, 'bot:') ||
+      github.event.label.name == 'needs-review' ||
+      github.event.label.name == 'changes-requested'
+    concurrency:
+      # One run per issue or pull request at a time. At most one later run
+      # waits; an older waiting run is cancelled, and the weekday routine
+      # picks its work up.
+      group: bot-trigger-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Find the routine for the label
+        id: route
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          LABEL: ${{ github.event.label.name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_DRAFT: ${{ github.event.pull_request.draft }}
+          # The Developer's GitHub App. changes-requested starts the
+          # Developer only on its own pull requests.
+          DEVELOPER_LOGIN: goodnightsec-dev[bot]
+        run: |
+          set -euo pipefail
+          role=""
+          routine=""
+          number=""
+          case "${EVENT_NAME}:${LABEL}" in
+            issues:bot:assistant | issues:bot:developer | issues:bot:reviewer | \
+            issues:bot:security-analyst | issues:bot:strategy-analyst)
+              if [ "${REPOSITORY}" = "goodnightsec/company" ]; then
+                role="${LABEL#bot:}"
+                routine="released-issues"
+                number="${ISSUE_NUMBER}"
+              else
+                echo "bot: labels release work only in goodnightsec/company. Nothing started."
+              fi
+              ;;
+            pull_request_target:needs-review)
+              if [ "${PR_DRAFT}" = "true" ]; then
+                echo "Draft pull request. Nothing started."
+              else
+                role="reviewer"
+                routine="review-queue"
+                number="${PR_NUMBER}"
+              fi
+              ;;
+            pull_request_target:changes-requested)
+              if [ "${PR_AUTHOR}" = "${DEVELOPER_LOGIN}" ]; then
+                role="developer"
+                routine="own-pull-requests"
+                number="${PR_NUMBER}"
+              else
+                echo "Not a pull request of the Developer. Nothing started."
+              fi
+              ;;
+            *)
+              echo "No routine for this label. Nothing started."
+              ;;
+          esac
+          if [ -n "${role}" ]; then
+            case "${number}" in
+              "" | *[!0-9]*)
+                echo "::error::No valid number in the event."
+                exit 1
+                ;;
+            esac
+          fi
+          {
+            echo "role=${role}"
+            echo "routine=${routine}"
+            echo "secret=$(printf '%s_%s' "${role}" "${routine}" | tr 'a-z-' 'A-Z_')"
+            echo "number=${number}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Call the routine's webhook
+        if: steps.route.outputs.role != ''
+        env:
+          ROLE: ${{ steps.route.outputs.role }}
+          ROUTINE: ${{ steps.route.outputs.routine }}
+          NUMBER: ${{ steps.route.outputs.number }}
+          REPOSITORY: ${{ github.repository }}
+          LABEL: ${{ github.event.label.name }}
+          WEBHOOK_URL: ${{ secrets[format('BOT_TRIGGER_{0}_URL', steps.route.outputs.secret)] }}
+          WEBHOOK_KEY: ${{ secrets[format('BOT_TRIGGER_{0}_KEY', steps.route.outputs.secret)] }}
+        run: |
+          set -euo pipefail
+          if [ -z "${WEBHOOK_URL}" ] || [ -z "${WEBHOOK_KEY}" ]; then
+            echo "::error::No webhook secret for the ${ROLE}'s ${ROUTINE} in this repository. The scheduled run picks the work up."
+            exit 1
+          fi
+          body="$(jq --null-input --compact-output \
+            --arg repository "${REPOSITORY}" \
+            --argjson number "${NUMBER}" \
+            --arg label "${LABEL}" \
+            '{repository: $repository, number: $number, label: $label}')"
+          echo "Body: ${body}"
+          # The key goes in a header file, not on the command line.
+          header_file="$(mktemp)"
+          trap 'rm -f "${header_file}"' EXIT
+          printf 'Authorization: Bearer %s\n' "${WEBHOOK_KEY}" > "${header_file}"
+          # No retry: a second call could start a second run.
+          status="$(curl --silent --show-error --proto '=https' --tlsv1.2 \
+            --max-time 30 --output /dev/null --write-out '%{http_code}' \
+            --request POST \
+            --header @"${header_file}" \
+            --header 'Content-Type: application/json' \
+            --data "${body}" \
+            "${WEBHOOK_URL}")" || status="000"
+          if [ "${status}" != "200" ]; then
+            echo "::error::The ${ROLE}'s ${ROUTINE} did not start (HTTP ${status}). The scheduled run picks the work up."
+            exit 1
+          fi
+          echo "The ${ROLE}'s ${ROUTINE} started (HTTP 200). That does not mean the work is done."
