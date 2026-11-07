@@ -104,11 +104,31 @@ stored target, so scope is guaranteed by construction. Create a policy and targe
 curl -sb jar.txt -X POST localhost:8080/api/scans \
   -H 'content-type: application/json' -H 'Origin: http://localhost:8080' \
   -d '{"scan_policy_id":"<policy_id>","target_id":"<target_id>"}'   # => {"scan_id":"..."}
+# list scans (paginated envelope: {items,total,limit,offset}; newest first)
+curl -sb jar.txt "localhost:8080/api/scans?limit=50&offset=0" | jq
+# optional filters: q (name / scan-ID prefix), started_from / started_to (RFC 3339, inclusive)
+curl -sb jar.txt "localhost:8080/api/scans?q=prod&started_from=2026-01-01T00:00:00Z&limit=50" | jq
 # check scan state (queued → running → complete)
 curl -sb jar.txt localhost:8080/api/scans/<scan_id>
 # occurrences observed by one scan (paginated envelope: {items,total,limit,offset})
 curl -sb jar.txt "localhost:8080/api/scans/<scan_id>/findings" | jq
 ```
+
+`GET /api/scans` returns a `{items, total, limit, offset}` page, ordered newest first
+(`created_at DESC`, then `id DESC` for stable ties), with a hard page-size ceiling of 500
+(default `limit` 50). **This is a breaking change** from the previous bare JSON array (and the
+previous default/ceiling of 100/500 without `offset` or `total`): API clients must read `.items`
+and page with `limit`/`offset`. Name it in the v0.6.0 release notes alongside this documentation.
+
+Optional filters (combine with pagination; malformed values return `400`, no silent fallback):
+
+- `q` — case-insensitive substring match against the target name, scan policy name, and schedule
+  name, plus a scan-ID **prefix** match (so the short ID shown in the table works as a search
+  term). LIKE metacharacters in `q` are escaped. Cap 256 bytes.
+- `started_from` / `started_to` — inclusive RFC 3339 bounds on `COALESCE(started_at, created_at)`.
+  Queued scans that have not started yet have a null `started_at`; they still match a range filter
+  using their `created_at` (queue time). `started_to` must be ≥ `started_from` when both are set.
+
 
 Each scan record carries the `scan_policy_id` / `scan_policy_name` it ran, the
 `template_set_id` / `template_set_name` selected at dispatch, plus the `target_id` /
