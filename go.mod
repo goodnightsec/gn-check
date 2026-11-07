@@ -4,6 +4,8 @@ go 1.26.0
 
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+godebug multipathtcp=0
+
 require (
 	github.com/coreos/go-oidc/v3 v3.21.0
 	github.com/go-git/go-git/v5 v5.19.3
