@@ -1,117 +1,168 @@
 <!doctype html>
-<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light">
-  <meta name="supported-color-schemes" content="light">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <title>Scan result changes — prod-web</title>
+  <!--[if mso]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
   <style>
      
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
     @media (max-width: 620px) {
       .nsc-pad { padding-left: 20px !important; padding-right: 20px !important; }
     }
     @media (prefers-color-scheme: dark) {
-      body { background-color: #0a0a0a !important; }
+      body, .gn-page { background-color: #0a0a0a !important; }
+      .gn-card { background-color: #171717 !important; border-color: #262626 !important; }
+      .gn-footer { background-color: #0a0a0a !important; }
+      .gn-line { border-color: #262626 !important; }
+      .gn-text { color: #f5f5f5 !important; }
+      .gn-muted { color: #a3a3a3 !important; }
+      .gn-zero { color: #737373 !important; }
+      .gn-link { color: #a5b4fc !important; }
+      .gn-sev-critical { color: #f87171 !important; }
+      .gn-sev-high { color: #fb923c !important; }
+      .gn-sev-medium { color: #fbbf24 !important; }
+      .gn-sev-low { color: #facc15 !important; }
+      .gn-sev-info { color: #38bdf8 !important; }
+      .gn-sev-unknown { color: #a3a3a3 !important; }
+      .gn-reason { background-color: #450a0a !important; }
+      .gn-reason-label { color: #fca5a5 !important; }
+      .gn-reason-text { color: #fecaca !important; }
+      .gn-brand { background-color: #020617 !important; }
+      .gn-btn { background-color: #4f46e5 !important; }
+      .gn-btn-text { color: #ffffff !important; }
     }
+    [data-ogsb] .gn-page { background-color: #0a0a0a !important; }
+    [data-ogsb] .gn-card { background-color: #171717 !important; }
+    [data-ogsb] .gn-footer { background-color: #0a0a0a !important; }
+    [data-ogsb] .gn-reason { background-color: #450a0a !important; }
+    [data-ogsb] .gn-brand { background-color: #020617 !important; }
+    [data-ogsb] .gn-btn { background-color: #4f46e5 !important; }
+    [data-ogsc] .gn-text { color: #f5f5f5 !important; }
+    [data-ogsc] .gn-muted { color: #a3a3a3 !important; }
+    [data-ogsc] .gn-zero { color: #737373 !important; }
+    [data-ogsc] .gn-link { color: #a5b4fc !important; }
+    [data-ogsc] .gn-sev-critical { color: #f87171 !important; }
+    [data-ogsc] .gn-sev-high { color: #fb923c !important; }
+    [data-ogsc] .gn-sev-medium { color: #fbbf24 !important; }
+    [data-ogsc] .gn-sev-low { color: #facc15 !important; }
+    [data-ogsc] .gn-sev-info { color: #38bdf8 !important; }
+    [data-ogsc] .gn-sev-unknown { color: #a3a3a3 !important; }
+    [data-ogsc] .gn-reason-label { color: #fca5a5 !important; }
+    [data-ogsc] .gn-reason-text { color: #fecaca !important; }
+    [data-ogsc] .gn-btn-text { color: #ffffff !important; }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:#fafafa;-webkit-text-size-adjust:100%;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fafafa;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+<body class="gn-page" bgcolor="#fafafa" style="margin:0;padding:0;background-color:#fafafa;-webkit-text-size-adjust:100%;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table class="gn-page" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#fafafa" style="background-color:#fafafa;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <tr>
       <td align="center" style="padding:24px 12px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <table class="gn-card" role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:600px;background-color:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
 
           <tr>
-<td style="background-color:#020617;padding:18px 32px;border-radius:8px 8px 0 0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <img src="cid:goodnight-check-lockup-on-dark.png" alt="Goodnight Check" width="193" height="36" style="display:block;width:193px;height:36px;border:0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:36px;color:#67e8f9;">
+<td class="gn-brand" bgcolor="#020617" style="background-color:#020617;padding:18px 32px;border-radius:8px 8px 0 0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <img src="cid:goodnight-check-lockup-on-dark.png" alt="Goodnight Check" width="193" height="36" style="display:block;width:193px;height:36px;border:0;background-color:#020617;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:36px;color:#67e8f9;">
 </td>
 </tr>
 
           <tr>
             <td class="nsc-pad" style="padding:24px 32px 20px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-              <h1 style="margin:0;font-size:20px;font-weight:600;letter-spacing:-0.01em;color:#171717;">Scan result changes — prod-web</h1>
-              <p style="margin:6px 0 0;font-size:13px;color:#737373;">Policy: Weekly full scan</p>
-              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;">
+              <h1 class="gn-text" style="margin:0;font-size:20px;font-weight:600;letter-spacing:-0.01em;color:#171717;">Scan result changes — prod-web</h1>
+              <p class="gn-muted" style="margin:6px 0 0;font-size:13px;color:#737373;">Policy: Weekly full scan</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background-color:#4f46e5;border-radius:6px;">
-                    <a href="https://nsc.example/scans/6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e" style="display:inline-block;padding:8px 14px;font-size:13px;font-weight:600;color:#ffffff;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Open scan</a>
-                  </td>
+                  <td style="padding-top:16px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://nsc.example/scans/6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e" style="height:33px;v-text-anchor:middle;width:104px;" arcsize="18%" stroke="f" fillcolor="#4f46e5"><w:anchorlock/><center style="color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;">Open scan</center></v:roundrect><![endif]-->
+<!--[if !mso]><!-->
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td class="gn-btn" bgcolor="#4f46e5" style="background-color:#4f46e5;border-radius:6px;padding:8px 14px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+      <a class="gn-btn-text" href="https://nsc.example/scans/6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e" style="display:inline-block;font-size:13px;line-height:17px;font-weight:600;color:#ffffff;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Open scan</a>
+    </td>
+  </tr>
+</table>
+<!--<![endif]-->
+</td>
                 </tr>
               </table>
             </td>
           </tr>
 
           <tr>
-            <td class="nsc-pad" style="padding:20px 32px;border-top:1px solid #e5e5e5;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-              <h2 style="margin:0 0 10px;font-size:14px;font-weight:600;color:#171717;">Counts</h2>
+            <td class="nsc-pad gn-line" style="padding:20px 32px;border-top:1px solid #e5e5e5;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+              <h2 class="gn-text" style="margin:0 0 10px;font-size:14px;font-weight:600;color:#171717;">Counts</h2>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;font-size:13px;color:#171717;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
                 <thead>
                   <tr>
-                    <th align="left" style="padding:6px 8px 6px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#737373;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Status</th>
-                    <th align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#b91c1c;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Critical</th>
-                    <th align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#c2410c;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">High</th>
-                    <th align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#b45309;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Medium</th>
-                    <th align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#a16207;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Low</th>
-                    <th align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#0369a1;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Info</th>
-                    <th align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#737373;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Unknown</th>
-                    <th align="right" style="padding:6px 0 6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#737373;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Total</th>
+                    <th class="gn-muted" align="left" style="padding:6px 8px 6px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#737373;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Status</th>
+                    <th class="gn-sev-critical" align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#b91c1c;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Critical</th>
+                    <th class="gn-sev-high" align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#c2410c;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">High</th>
+                    <th class="gn-sev-medium" align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#b45309;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Medium</th>
+                    <th class="gn-sev-low" align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#a16207;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Low</th>
+                    <th class="gn-sev-info" align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#0369a1;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Info</th>
+                    <th class="gn-muted" align="right" style="padding:6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#737373;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Unknown</th>
+                    <th class="gn-muted" align="right" style="padding:6px 0 6px 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#737373;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Total</th>
                   </tr>
                 </thead>
                 <tbody>
                   
                   <tr>
-                    <td style="padding:8px 8px 8px 0;border-top:1px solid #e5e5e5;font-weight:600;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</td>
+                    <td class="gn-text gn-line" style="padding:8px 8px 8px 0;border-top:1px solid #e5e5e5;color:#171717;font-weight:600;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b91c1c;font-weight:600;">1</td>
+                    <td class="gn-line gn-sev-critical" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b91c1c;font-weight:600;">1</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#c2410c;font-weight:600;">4</td>
+                    <td class="gn-line gn-sev-high" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#c2410c;font-weight:600;">4</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b45309;font-weight:600;">2</td>
+                    <td class="gn-line gn-sev-medium" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b45309;font-weight:600;">2</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a16207;font-weight:600;">3</td>
+                    <td class="gn-line gn-sev-low" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a16207;font-weight:600;">3</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0369a1;font-weight:600;">25</td>
+                    <td class="gn-line gn-sev-info" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0369a1;font-weight:600;">25</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px 0 8px 8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-weight:600;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">35</td>
+                    <td class="gn-text gn-line" align="right" style="padding:8px 0 8px 8px;border-top:1px solid #e5e5e5;color:#171717;font-variant-numeric:tabular-nums;font-weight:600;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">35</td>
                   </tr>
                   
                   <tr>
-                    <td style="padding:8px 8px 8px 0;border-top:1px solid #e5e5e5;font-weight:600;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Changed</td>
+                    <td class="gn-text gn-line" style="padding:8px 8px 8px 0;border-top:1px solid #e5e5e5;color:#171717;font-weight:600;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Changed</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b45309;font-weight:600;">1</td>
+                    <td class="gn-line gn-sev-medium" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#b45309;font-weight:600;">1</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;font-weight:600;">1</td>
+                    <td class="gn-line gn-sev-unknown" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;font-weight:600;">1</td>
                     
-                    <td align="right" style="padding:8px 0 8px 8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-weight:600;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">2</td>
+                    <td class="gn-text gn-line" align="right" style="padding:8px 0 8px 8px;border-top:1px solid #e5e5e5;color:#171717;font-variant-numeric:tabular-nums;font-weight:600;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">2</td>
                   </tr>
                   
                   <tr>
-                    <td style="padding:8px 8px 8px 0;border-top:1px solid #e5e5e5;font-weight:600;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Fixed</td>
+                    <td class="gn-text gn-line" style="padding:8px 8px 8px 0;border-top:1px solid #e5e5e5;color:#171717;font-weight:600;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Fixed</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#c2410c;font-weight:600;">1</td>
+                    <td class="gn-line gn-sev-high" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#c2410c;font-weight:600;">1</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a16207;font-weight:600;">2</td>
+                    <td class="gn-line gn-sev-low" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a16207;font-weight:600;">2</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#a3a3a3;">0</td>
+                    <td class="gn-line gn-zero" align="right" style="padding:8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#737373;">0</td>
                     
-                    <td align="right" style="padding:8px 0 8px 8px;border-top:1px solid #e5e5e5;font-variant-numeric:tabular-nums;font-weight:600;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">3</td>
+                    <td class="gn-text gn-line" align="right" style="padding:8px 0 8px 8px;border-top:1px solid #e5e5e5;color:#171717;font-variant-numeric:tabular-nums;font-weight:600;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">3</td>
                   </tr>
                   
                 </tbody>
@@ -120,97 +171,157 @@
           </tr>
 
           <tr>
-            <td class="nsc-pad" style="padding:20px 32px 8px;border-top:1px solid #e5e5e5;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-              <h2 style="margin:0 0 10px;font-size:14px;font-weight:600;color:#171717;">Findings</h2>
+            <td class="nsc-pad gn-line" style="padding:20px 32px 8px;border-top:1px solid #e5e5e5;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+              <h2 class="gn-text" style="margin:0 0 10px;font-size:14px;font-weight:600;color:#171717;">Findings</h2>
               
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
                 
                 <tr>
-                  <td style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</span>
+                  <td class="gn-line" style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#e0e7ff" style="background-color:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</td>
+  </tr>
+</table>
+
                   </td>
-                  <td style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">critical</span>
+                  <td class="gn-line" style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#fee2e2" style="background-color:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">critical</td>
+  </tr>
+</table>
+
                   </td>
-                  <td style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <a href="https://nsc.example/findings/101" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Remote code execution in upload handler</a>
+                  <td class="gn-line" style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <a class="gn-link" href="https://nsc.example/findings/101" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Remote code execution in upload handler</a>
                     
-                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">cve-2026-1234</span>
-                    
-                    
-                    <div style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/upload</div>
-                    
-                  </td>
-                </tr>
-                
-                <tr>
-                  <td style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</span>
-                  </td>
-                  <td style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">high</span>
-                  </td>
-                  <td style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <a href="https://nsc.example/findings/102" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Exposed admin panel</a>
-                    
-                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">exposed-panels</span>
+                    <span class="gn-muted" style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">cve-2026-1234</span>
                     
                     
-                    <div style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/admin</div>
+                    <div class="gn-muted" style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/upload</div>
                     
                   </td>
                 </tr>
                 
                 <tr>
-                  <td style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</span>
+                  <td class="gn-line" style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#e0e7ff" style="background-color:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</td>
+  </tr>
+</table>
+
                   </td>
-                  <td style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">low</span>
+                  <td class="gn-line" style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#ffedd5" style="background-color:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">high</td>
+  </tr>
+</table>
+
                   </td>
-                  <td style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <a href="https://nsc.example/findings/103" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Missing HSTS header</a>
+                  <td class="gn-line" style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <a class="gn-link" href="https://nsc.example/findings/102" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Exposed admin panel</a>
                     
-                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">missing-hsts</span>
-                    
-                    
-                    <div style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/</div>
-                    
-                  </td>
-                </tr>
-                
-                <tr>
-                  <td style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Changed</span>
-                  </td>
-                  <td style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#f5f5f5;color:#404040;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">unknown</span>
-                  </td>
-                  <td style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <a href="https://nsc.example/findings/104" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Technology stack detection</a>
-                    
-                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">tech-detect</span>
+                    <span class="gn-muted" style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">exposed-panels</span>
                     
                     
-                    <div style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/</div>
+                    <div class="gn-muted" style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/admin</div>
                     
                   </td>
                 </tr>
                 
                 <tr>
-                  <td style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Fixed</span>
+                  <td class="gn-line" style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#e0e7ff" style="background-color:#e0e7ff;color:#3730a3;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">New</td>
+  </tr>
+</table>
+
                   </td>
-                  <td style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;background-color:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">high</span>
+                  <td class="gn-line" style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#fef9c3" style="background-color:#fef9c3;color:#854d0e;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">low</td>
+  </tr>
+</table>
+
                   </td>
-                  <td style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <a href="https://nsc.example/findings/105" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Outdated nginx version</a>
+                  <td class="gn-line" style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <a class="gn-link" href="https://nsc.example/findings/103" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Missing HSTS header</a>
                     
-                    <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">cve-2025-9999</span>
+                    <span class="gn-muted" style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">missing-hsts</span>
                     
                     
-                    <div style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/server-info</div>
+                    <div class="gn-muted" style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/</div>
+                    
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td class="gn-line" style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#fef3c7" style="background-color:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Changed</td>
+  </tr>
+</table>
+
+                  </td>
+                  <td class="gn-line" style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#f5f5f5" style="background-color:#f5f5f5;color:#404040;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">unknown</td>
+  </tr>
+</table>
+
+                  </td>
+                  <td class="gn-line" style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <a class="gn-link" href="https://nsc.example/findings/104" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Technology stack detection</a>
+                    
+                    <span class="gn-muted" style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">tech-detect</span>
+                    
+                    
+                    <div class="gn-muted" style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/</div>
+                    
+                  </td>
+                </tr>
+                
+                <tr>
+                  <td class="gn-line" style="padding:10px 8px 10px 0;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#dcfce7" style="background-color:#dcfce7;color:#166534;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Fixed</td>
+  </tr>
+</table>
+
+                  </td>
+                  <td class="gn-line" style="padding:10px 8px;border-top:1px solid #e5e5e5;vertical-align:top;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="#ffedd5" style="background-color:#ffedd5;color:#9a3412;padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">high</td>
+  </tr>
+</table>
+
+                  </td>
+                  <td class="gn-line" style="padding:10px 0;border-top:1px solid #e5e5e5;vertical-align:top;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <a class="gn-link" href="https://nsc.example/findings/105" style="font-size:13px;font-weight:600;color:#4f46e5;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Outdated nginx version</a>
+                    
+                    <span class="gn-muted" style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;">cve-2025-9999</span>
+                    
+                    
+                    <div class="gn-muted" style="margin-top:2px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:12px;color:#737373;word-break:break-all;">https://prod-web.internal/server-info</div>
                     
                   </td>
                 </tr>
@@ -223,11 +334,11 @@
           
 
           <tr>
-<td class="nsc-pad" style="padding:16px 32px;background-color:#fafafa;border-top:1px solid #e5e5e5;border-radius:0 0 8px 8px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="font-size:12px;color:#737373;">
+<td class="nsc-pad gn-footer gn-line" bgcolor="#fafafa" style="padding:16px 32px;background-color:#fafafa;border-top:1px solid #e5e5e5;border-radius:0 0 8px 8px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div class="gn-muted" style="font-size:12px;color:#737373;">
     Scan <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;">6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e</span> · Policy Weekly full scan
   </div>
-  <div style="margin-top:6px;font-size:12px;line-height:1.5;color:#737373;">
+  <div class="gn-muted" style="margin-top:6px;font-size:12px;line-height:1.5;color:#737373;">
     Links open in Goodnight Check — you'll need to sign in as usual. No presigned URLs.
   </div>
 </td>
