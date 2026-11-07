@@ -117,7 +117,9 @@ part as the complete fallback. The HTML makes no external requests (no remote im
 tracking pixels): the brand logo is the Goodnight Check lockup as a PNG (Gmail and
 Outlook don't render SVG) sent as an inline `image/png` MIME part referenced by CID
 (`<img src="cid:goodnight-check-lockup-on-dark.png">`), so clients that block images simply show
-its alt text, "Goodnight Check".
+its alt text, "Goodnight Check". The mails declare light and dark support and carry their own dark
+theme; for Outlook classic for Windows they use a VML button, table-cell badges and a lockup PNG
+with an opaque midnight backing, so its dark mode cannot hide the logo or reflow the button.
 Links point at `APP_BASE_URL` and open behind a normal sign-in. The rendered
 documents are pinned by golden-file tests (`internal/backend/testdata/mail/`).
 
