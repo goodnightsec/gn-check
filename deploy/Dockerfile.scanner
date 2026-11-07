@@ -16,7 +16,7 @@ ARG NAABU_VERSION=2.6.1
 # Pinned to the native build platform so the Go toolchain never runs under
 # emulation; GOOS/GOARCH come from buildx and produce a static binary for the
 # target arch.
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
@@ -48,7 +48,7 @@ RUN set -e; \
 # are checksum-verified against each release's own checksums file before use
 # (replaces the implicit trust in mutable upstream image tags). Templates are
 # not baked here: the backend pushes the catalog bundle the node runs.
-FROM --platform=$BUILDPLATFORM alpine:3.24 AS nuclei
+FROM --platform=$BUILDPLATFORM alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a AS nuclei
 ARG NUCLEI_VERSION
 ARG NAABU_VERSION
 ARG TARGETARCH
@@ -78,7 +78,7 @@ RUN set -eux; \
 # base that has a package manager, then stage the full closure (libpcap + those
 # deps, minus libc which the micro base already ships — `ldd` flattens the whole
 # transitive tree) so the package-manager-less micro image can carry it verbatim.
-FROM redhat/ubi10-minimal AS libpcap
+FROM redhat/ubi10-minimal:10.2@sha256:c3fe95ec9f53a3888c47314eb4d08bde09ebde646a428137b445091afe1daf89 AS libpcap
 RUN microdnf install -y libpcap && microdnf clean all
 RUN mkdir -p /libs && cp -aL /usr/lib64/libpcap.so.1 /libs/ && \
     ldd /usr/lib64/libpcap.so.1 | awk '/=> \// {print $3}' | grep -v 'libc\.so' \
@@ -95,7 +95,7 @@ RUN mkdir -p /libs && cp -aL /usr/lib64/libpcap.so.1 /libs/ && \
 # (in Docker's default capability set) to open raw sockets — or set
 # NAABU_SCAN_TYPE=connect to fall back to an unprivileged connect scan (no host
 # discovery, no libpcap needed).
-FROM redhat/ubi10-micro
+FROM redhat/ubi10-micro:10.2@sha256:8488f5ec082768a01d1ce4e0ef3878f782a40ff6d233afa74bc23d4e740620a4
 COPY --from=nuclei /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=libpcap /libs/ /usr/lib64/
 COPY --from=build /out/scanner /usr/local/bin/scanner
