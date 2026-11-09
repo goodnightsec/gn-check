@@ -291,7 +291,7 @@ internal/store     Postgres access + embedded migrations (internal/store/migrati
 web/               React + TS + Vite SPA; embedded into the backend via go:embed (web/embed.go)
 deploy/            Dockerfile.backend (SPA build + distroless), Dockerfile.scanner, keycloak/ (seeded realm), garage/ (local S3 config)
 docker-compose.yml postgres + garage + keycloak + scanner + backend
-.github/workflows/ CI (build/vet/test + SPA), release (images → GHCR), wiki (`docs/admin/` → GitHub wiki), scorecard (weekly OpenSSF Scorecard → code scanning)
+.github/workflows/ CI (build/vet/test + SPA), release (tag → scan, attest, SBOM, draft release), scanner-versions (newest nuclei/naabu), wiki (`docs/admin/` → GitHub wiki), scorecard (weekly OpenSSF Scorecard → code scanning)
 docs/ARCHITECTURE.md   design decisions (source of truth); docs/admin/ is the administration guide (published to the GitHub wiki); API.md, DEVELOPMENT.md are the other practical guides; UI_STYLE_GUIDE.md is the web UI design system
 ```
 
@@ -336,6 +336,17 @@ Then log in at `http://localhost:8080`. The API is under `/api/*` behind the ses
 `target_id`).
 See `docs/API.md` for the endpoint walkthrough and `docs/admin/Configuration.md` for auth-disabled
 dev mode used in headless `curl` testing.
+
+### Releases
+
+A `v*` tag runs `.github/workflows/release.yml`. It pushes the images under the exact
+version tag and `sha-*`, scans both platforms with the pinned Trivy image and DB, and
+only on a green scan adds `X.Y`/`latest`, attests provenance and one SBOM per platform,
+and creates the draft GitHub release. The scanner image's gate skips the bundled
+nuclei/naabu binaries; the separate `scanner-versions` check fails when either pin is
+behind the newest upstream release, and the full scan still lists their findings for the
+release notes. `workflow_dispatch` is a rehearsal and never creates a release. Refresh
+`TRIVY_IMAGE` and `TRIVY_DB` in a PR before each release.
 
 ## Environment notes
 
