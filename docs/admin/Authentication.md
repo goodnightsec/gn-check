@@ -10,6 +10,8 @@ Environment variables for the IdP, cookie, session TTL, and login limiter are li
 
 ## OIDC/BFF
 
+For a production Keycloak realm, client and groups-claim setup, see [Keycloak](SSO-Keycloak.md).
+
 Register the exact `OIDC_REDIRECT_URL` with the provider. If browser-facing and cluster-internal
 issuer addresses differ, keep the canonical browser issuer in `OIDC_ISSUER` and use
 `OIDC_DISCOVERY_URL` for backend metadata requests.

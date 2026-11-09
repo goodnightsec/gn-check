@@ -9,6 +9,10 @@
 - [Findings and data](Findings-and-data.md)
 - [Troubleshooting](Troubleshooting.md)
 
+**Single sign-on**
+
+- [Keycloak](SSO-Keycloak.md)
+
 **In the repository**
 
 - [Architecture](../ARCHITECTURE.md)

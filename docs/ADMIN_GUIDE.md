@@ -20,6 +20,7 @@ on the next publish.
 | [Deployment](admin/Deployment.md) | Requirements, Compose, GHCR images, production |
 | [Configuration](admin/Configuration.md) | Environment variables |
 | [Authentication](admin/Authentication.md) | OIDC/BFF, sessions, service accounts, mTLS |
+| [Keycloak (single sign-on)](admin/SSO-Keycloak.md) | Production realm, client, groups, OIDC settings, role check |
 | [First-run bootstrap](admin/First-run-bootstrap.md) | First sign-in through the first successful scan |
 | [Operations](admin/Operations.md) | Targets, templates, policies, schedules, scanner fleet |
 | [Findings and data](admin/Findings-and-data.md) | Lifecycle, exports, audit, backups, upgrades |
