@@ -10,7 +10,7 @@ ARG NUCLEI_VERSION=3.11.1
 # linked SDK" model as nuclei — bump the ARG to upgrade. naabu dlopen's libpcap
 # only for SYN scans, so in the connect-scan mode the node always uses it needs
 # no libpcap at runtime and runs fine on the shared-lib-less UBI Micro base.
-ARG NAABU_VERSION=2.6.1
+ARG NAABU_VERSION=2.7.0
 
 # ---- build the scanner binary (cross-compiled for the target arch) ----
 # Pinned to the native build platform so the Go toolchain never runs under
