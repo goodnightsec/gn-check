@@ -24,3 +24,7 @@ GitHub UI.
 - [Operations](Operations.md) — targets, templates, policies, schedules, scanner fleet, scan email
 - [Findings and data](Findings-and-data.md) — lifecycle, exports, audit, backups, upgrades
 - [Troubleshooting](Troubleshooting.md)
+
+### Single sign-on
+
+- [Keycloak](SSO-Keycloak.md) — production realm, client, groups, OIDC settings, role check
