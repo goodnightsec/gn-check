@@ -82,6 +82,10 @@ Full details in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Verifying your change
 
+Major new functionality added to product code comes with automated tests.
+Any other change in behavior comes with a test, or the pull request says
+why there is none.
+
 Before a PR is ready, these must pass locally:
 
 ```sh
