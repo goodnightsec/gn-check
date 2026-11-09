@@ -1,0 +1,39 @@
+name: Scanner versions
+
+# The release gate skips the bundled nuclei/naabu binaries. This check is the
+# control that they are the newest upstream releases; it fails when a pin in
+# deploy/Dockerfile.scanner is behind.
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - deploy/Dockerfile.scanner
+      - scripts/check-scanner-versions.sh
+      - .github/workflows/scanner-versions.yml
+  push:
+    branches: [main]
+    paths:
+      - deploy/Dockerfile.scanner
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scanner-versions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Newest nuclei and naabu
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check upstream releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          ./scripts/check-scanner-versions.sh | tee -a "$GITHUB_STEP_SUMMARY"
