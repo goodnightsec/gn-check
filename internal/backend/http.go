@@ -566,9 +566,22 @@ func overlayScanPolicy(opts types.ScanOptions, p store.ScanPolicy) types.ScanOpt
 	return opts
 }
 
+// scansPage is the paginated envelope for GET /api/scans (breaking change from
+// the previous bare array; documented in docs/API.md for v0.6.0).
+type scansPage struct {
+	Items  []store.ScanRow `json:"items"`
+	Total  int             `json:"total"`
+	Limit  int             `json:"limit"`
+	Offset int             `json:"offset"`
+}
+
 func (s *Server) handleListScans(w http.ResponseWriter, r *http.Request) {
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	rows, err := s.store.ListScans(r.Context(), limit)
+	f, err := parseScanListParams(r.URL.Query())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	rows, total, err := s.store.ListScans(r.Context(), f)
 	if err != nil {
 		s.serverError(w, "list scans", err)
 		return
@@ -577,12 +590,103 @@ func (s *Server) handleListScans(w http.ResponseWriter, r *http.Request) {
 		rows = []store.ScanRow{}
 	}
 	// Attach live progress (#66) to running scans from the orchestrator's cache.
-	for i := range rows {
-		if rows[i].State == string(types.ScanRunning) {
-			rows[i].Progress = s.orch.Progress(rows[i].ID)
+	if s.orch != nil {
+		for i := range rows {
+			if rows[i].State == string(types.ScanRunning) {
+				rows[i].Progress = s.orch.Progress(rows[i].ID)
+			}
 		}
 	}
-	writeJSON(w, http.StatusOK, rows)
+	writeJSON(w, http.StatusOK, scansPage{Items: rows, Total: total, Limit: f.Limit, Offset: f.Offset})
+}
+
+// parseScanListParams validates GET /api/scans query params. Malformed
+// limit/offset/timestamps and oversized q return an error (HTTP 400); there is
+// no silent fallback. Missing limit defaults to store.DefaultScanPageLimit;
+// missing offset defaults to 0.
+func parseScanListParams(q url.Values) (store.ScanListFilter, error) {
+	var f store.ScanListFilter
+
+	if values, ok := q["q"]; ok && len(values) > 1 {
+		return f, errors.New("only one q parameter is allowed")
+	}
+	if values, ok := q["limit"]; ok && len(values) > 1 {
+		return f, errors.New("only one limit parameter is allowed")
+	}
+	if values, ok := q["offset"]; ok && len(values) > 1 {
+		return f, errors.New("only one offset parameter is allowed")
+	}
+	if values, ok := q["started_from"]; ok && len(values) > 1 {
+		return f, errors.New("only one started_from parameter is allowed")
+	}
+	if values, ok := q["started_to"]; ok && len(values) > 1 {
+		return f, errors.New("only one started_to parameter is allowed")
+	}
+
+	f.Query = strings.TrimSpace(q.Get("q"))
+	if len(f.Query) > store.MaxScanListQueryBytes {
+		return f, fmt.Errorf("q exceeds %d-byte limit", store.MaxScanListQueryBytes)
+	}
+
+	limitRaw := strings.TrimSpace(q.Get("limit"))
+	if limitRaw == "" {
+		f.Limit = store.DefaultScanPageLimit
+	} else {
+		n, err := strconv.Atoi(limitRaw)
+		if err != nil {
+			return f, errors.New("limit must be an integer")
+		}
+		if n <= 0 || n > store.MaxScanPageLimit {
+			return f, fmt.Errorf("limit must be between 1 and %d", store.MaxScanPageLimit)
+		}
+		f.Limit = n
+	}
+
+	offsetRaw := strings.TrimSpace(q.Get("offset"))
+	if offsetRaw == "" {
+		f.Offset = 0
+	} else {
+		n, err := strconv.Atoi(offsetRaw)
+		if err != nil {
+			return f, errors.New("offset must be an integer")
+		}
+		if n < 0 {
+			return f, errors.New("offset must be >= 0")
+		}
+		f.Offset = n
+	}
+
+	from, err := parseOptionalRFC3339(q.Get("started_from"), "started_from")
+	if err != nil {
+		return f, err
+	}
+	to, err := parseOptionalRFC3339(q.Get("started_to"), "started_to")
+	if err != nil {
+		return f, err
+	}
+	if from != nil && to != nil && to.Before(*from) {
+		return f, errors.New("started_to must be >= started_from")
+	}
+	f.StartedFrom = from
+	f.StartedTo = to
+	return f, nil
+}
+
+func parseOptionalRFC3339(raw, name string) (*time.Time, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	t, err := time.Parse(time.RFC3339, raw)
+	if err != nil {
+		// Also accept RFC3339Nano (fractional seconds) which many clients emit.
+		t, err = time.Parse(time.RFC3339Nano, raw)
+		if err != nil {
+			return nil, fmt.Errorf("%s must be an RFC 3339 timestamp", name)
+		}
+	}
+	t = t.UTC()
+	return &t, nil
 }
 
 func (s *Server) handleGetScan(w http.ResponseWriter, r *http.Request) {

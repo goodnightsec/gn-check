@@ -849,14 +849,57 @@ func (s *Store) GetScan(ctx context.Context, id string) (ScanRow, error) {
 	return r, nil
 }
 
-// ListScans returns recent scans, newest first.
-func (s *Store) ListScans(ctx context.Context, limit int) ([]ScanRow, error) {
-	if limit <= 0 || limit > 500 {
-		limit = 100
+// Scan list pagination defaults and hard ceiling for GET /api/scans.
+const (
+	DefaultScanPageLimit  = 50
+	MaxScanPageLimit      = 500
+	MaxScanListQueryBytes = 256
+)
+
+// ScanListFilter is the server-side filter + page for ListScans.
+// Query matches target name, scan policy name, schedule name (substring),
+// or a scan-ID prefix (the short ID shown in the table), case-insensitive,
+// with LIKE metacharacters escaped. StartedFrom/StartedTo are inclusive
+// bounds on COALESCE(started_at, created_at) so queued scans without a
+// started_at still participate in a start-time range using their queue time.
+type ScanListFilter struct {
+	Query       string
+	StartedFrom *time.Time
+	StartedTo   *time.Time
+	Limit       int
+	Offset      int
+}
+
+// ListScans returns a page of scans matching f, newest first (created_at DESC,
+// id DESC for stable ties), plus the total matching row count.
+func (s *Store) ListScans(ctx context.Context, f ScanListFilter) ([]ScanRow, int, error) {
+	limit := f.Limit
+	if limit <= 0 || limit > MaxScanPageLimit {
+		limit = DefaultScanPageLimit
 	}
-	rows, err := s.pool.Query(ctx, scanSelect+` ORDER BY s.created_at DESC LIMIT $1`, limit)
+	offset := f.Offset
+	if offset < 0 {
+		offset = 0
+	}
+
+	where, args := scanListWhere(f)
+	var total int
+	if err := s.pool.QueryRow(ctx,
+		`SELECT count(*) FROM scans s
+		  LEFT JOIN targets t ON t.id = s.target_id
+		  LEFT JOIN scan_policies sp ON sp.id = s.scan_policy_id
+		  LEFT JOIN schedules sch ON sch.id = s.schedule_id`+where, args...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count scans: %w", err)
+	}
+
+	args = append(args, limit, offset)
+	limitPH := fmt.Sprintf("$%d", len(args)-1)
+	offsetPH := fmt.Sprintf("$%d", len(args))
+	rows, err := s.pool.Query(ctx, scanSelect+`
+	  LEFT JOIN schedules sch ON sch.id = s.schedule_id`+where+
+		` ORDER BY s.created_at DESC, s.id DESC LIMIT `+limitPH+` OFFSET `+offsetPH, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -864,11 +907,44 @@ func (s *Store) ListScans(ctx context.Context, limit int) ([]ScanRow, error) {
 	for rows.Next() {
 		r, err := scanScan(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		out = append(out, r)
 	}
-	return out, rows.Err()
+	return out, total, rows.Err()
+}
+
+// scanListWhere builds the shared WHERE clause for ListScans count + page.
+func scanListWhere(f ScanListFilter) (string, []any) {
+	var conds []string
+	var args []any
+	push := func(v any) int {
+		args = append(args, v)
+		return len(args)
+	}
+	if q := strings.TrimSpace(f.Query); q != "" {
+		pat := "%" + escapeLike(q) + "%"
+		prefix := escapeLike(q) + "%"
+		nPat := push(pat)
+		nPrefix := push(prefix)
+		conds = append(conds, fmt.Sprintf(
+			`(t.name ILIKE $%d ESCAPE '\' OR sp.name ILIKE $%d ESCAPE '\' OR sch.name ILIKE $%d ESCAPE '\' OR s.id::text ILIKE $%d ESCAPE '\')`,
+			nPat, nPat, nPat, nPrefix,
+		))
+	}
+	// COALESCE so queued scans (started_at IS NULL) still match a range via created_at.
+	if f.StartedFrom != nil {
+		n := push(*f.StartedFrom)
+		conds = append(conds, fmt.Sprintf(`COALESCE(s.started_at, s.created_at) >= $%d`, n))
+	}
+	if f.StartedTo != nil {
+		n := push(*f.StartedTo)
+		conds = append(conds, fmt.Sprintf(`COALESCE(s.started_at, s.created_at) <= $%d`, n))
+	}
+	if len(conds) == 0 {
+		return "", args
+	}
+	return " WHERE " + strings.Join(conds, " AND "), args
 }
 
 // CancelScan marks a queued/running scan as cancelled and returns its node scan
