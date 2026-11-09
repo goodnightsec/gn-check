@@ -28,3 +28,4 @@ GitHub UI.
 ### Single sign-on
 
 - [Keycloak](SSO-Keycloak.md) — production realm, client, groups, OIDC settings, role check
+- [Okta](SSO-Okta.md) — OIDC application, groups claim, OIDC settings, role check

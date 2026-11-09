@@ -12,6 +12,7 @@
 **Single sign-on**
 
 - [Keycloak](SSO-Keycloak.md)
+- [Okta](SSO-Okta.md)
 
 **In the repository**
 
