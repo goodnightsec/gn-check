@@ -10,9 +10,9 @@ import { Plus, X } from "lucide-react";
 import { MultiSelect, TokenInput, type Option } from "./filters";
 import { Button, IconButton, Input, Select } from "./ui";
 
-type ValueKind = "enum" | "tags" | "text" | "time" | "number" | "boolean";
+export type ValueKind = "enum" | "tags" | "text" | "time" | "number" | "boolean";
 
-interface FieldDef {
+export interface FieldDef {
   value: string;
   label: string;
   kind: ValueKind;
@@ -259,12 +259,23 @@ export function ConditionBuilder({
   rows,
   onChange,
   targetOptions,
+  fields = FIELDS,
+  unique = false,
+  hideClearAll = false,
 }: {
   rows: Row[];
   onChange: (rows: Row[]) => void;
   targetOptions: Option[];
+  /** Field set offered by the builder; defaults to the full Findings set. */
+  fields?: FieldDef[];
+  /** At most one row per field, combined with "and" only (a small field set). */
+  unique?: boolean;
+  /** Hide the "Clear all" button when the page offers its own single Clear. */
+  hideClearAll?: boolean;
 }) {
   const optionsFor = (def: FieldDef) => (def.value === "target" ? targetOptions : (def.options ?? []));
+  const lookup = (f: string) => fields.find((x) => x.value === f) ?? fields[0];
+  const unusedFields = fields.filter((f) => !rows.some((r) => r.field === f.value));
 
   const setRow = (id: number, patch: Partial<Row>) =>
     onChange(
@@ -273,7 +284,7 @@ export function ConditionBuilder({
         const merged = { ...r, ...patch };
         // Changing the field resets op + values to that field's defaults.
         if (patch.field && patch.field !== r.field) {
-          merged.op = fieldDef(patch.field).ops[0];
+          merged.op = lookup(patch.field).ops[0];
           merged.values = [];
         }
         // Changing to/from a no-value op clears stale values. Switching a
@@ -284,7 +295,11 @@ export function ConditionBuilder({
       })
     );
 
-  const addRow = () => onChange([...rows, makeRow()]);
+  const addRow = () => {
+    if (!unique) return onChange([...rows, makeRow()]);
+    const f = unusedFields[0];
+    if (f) onChange([...rows, makeRow({ field: f.value, op: f.ops[0], values: [] })]);
+  };
   const removeRow = (id: number) => onChange(rows.filter((r) => r.id !== id));
   const clearAll = () => onChange([]);
 
@@ -292,12 +307,14 @@ export function ConditionBuilder({
     <div>
       <div className="space-y-2">
         {rows.map((r, i) => {
-          const def = fieldDef(r.field);
+          const def = lookup(r.field);
           return (
             <div key={r.id} className="flex flex-wrap items-center gap-2">
               <div className="w-16 shrink-0 text-right text-xs">
                 {i === 0 ? (
                   <span className="text-neutral-400">where</span>
+                ) : unique ? (
+                  <span className="text-neutral-400">and</span>
                 ) : (
                   <Select
                     value={r.connector}
@@ -311,11 +328,13 @@ export function ConditionBuilder({
               </div>
 
               <Select value={r.field} onChange={(e) => setRow(r.id, { field: e.target.value })} className="w-48">
-                {FIELDS.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
-                  </option>
-                ))}
+                {fields
+                  .filter((f) => !unique || f.value === r.field || unusedFields.includes(f))
+                  .map((f) => (
+                    <option key={f.value} value={f.value}>
+                      {f.label}
+                    </option>
+                  ))}
               </Select>
 
               <Select value={r.op} onChange={(e) => setRow(r.id, { op: e.target.value })} className="w-36">
@@ -421,11 +440,13 @@ export function ConditionBuilder({
       </div>
 
       <div className="mt-3 flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={addRow}>
-          <Plus className="h-4 w-4" aria-hidden />
-          Add condition
-        </Button>
-        {rows.length > 0 && (
+        {(!unique || unusedFields.length > 0) && (
+          <Button variant="ghost" size="sm" onClick={addRow}>
+            <Plus className="h-4 w-4" aria-hidden />
+            Add condition
+          </Button>
+        )}
+        {rows.length > 0 && !hideClearAll && (
           <Button variant="ghost" size="sm" onClick={clearAll}>
             Clear all
           </Button>

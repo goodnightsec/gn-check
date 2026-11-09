@@ -3,15 +3,16 @@ import { Filter } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { scanListSearch, type ScanListChange, type ScanListUrlState } from "./scansListParams";
+import { SCAN_FIELDS, nextScanFilter, scanFilterToRows } from "./scansFilterRows";
 import { api } from "../api";
 import { hasRole, useMe } from "../auth";
+import { ConditionBuilder, type Row } from "../components/ConditionBuilder";
 import {
   Button,
   Card,
   ErrorText,
   Field,
   FormHint,
-  Input,
   linkClass,
   Modal,
   ModalActions,
@@ -113,22 +114,13 @@ function RunScanModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-/** Convert a datetime-local value (no zone) to an RFC 3339 UTC instant for the API. */
-function localInputToRFC3339(local: string): string | undefined {
-  const v = local.trim();
-  if (!v) return undefined;
-  const d = new Date(v);
-  if (Number.isNaN(d.getTime())) return undefined;
-  return d.toISOString();
-}
-
-/** Convert an RFC 3339 query value back to datetime-local (local wall time). */
-function rfc3339ToLocalInput(rfc: string | null): string {
-  if (!rfc) return "";
+/** A chip label for a bound: a whole UTC day shows as a date, anything else as the exact UTC instant. */
+function boundLabel(rfc: string): string {
   const d = new Date(rfc);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  if (Number.isNaN(d.getTime())) return rfc;
+  const iso = d.toISOString();
+  if (iso.endsWith("T00:00:00.000Z") || iso.endsWith("T23:59:59.999Z")) return iso.slice(0, 10);
+  return `${iso.slice(0, 19).replace("T", " ")} UTC`;
 }
 
 export function ScansPage() {
@@ -148,16 +140,17 @@ export function ScansPage() {
   const toParam = searchParams.get("started_to") ?? "";
   const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
 
-  // Local draft for the name box so typing doesn't hit the API every keystroke.
-  const [nameDraft, setNameDraft] = useState(qParam);
-  const [fromDraft, setFromDraft] = useState(() => rfc3339ToLocalInput(fromParam || null));
-  const [toDraft, setToDraft] = useState(() => rfc3339ToLocalInput(toParam || null));
-
+  // The builder rows are the draft; the URL holds the applied filter. The rows
+  // are rebuilt from the URL only when the URL filter really changes (Back,
+  // a pasted link), so half-built rows survive the page's own applies.
+  const urlFilter = useMemo(
+    () => ({ q: qParam, started_from: fromParam, started_to: toParam }),
+    [qParam, fromParam, toParam]
+  );
+  const [rows, setRows] = useState<Row[]>(() => scanFilterToRows(urlFilter));
   useEffect(() => {
-    setNameDraft(qParam);
-    setFromDraft(rfc3339ToLocalInput(fromParam || null));
-    setToDraft(rfc3339ToLocalInput(toParam || null));
-  }, [qParam, fromParam, toParam]);
+    setRows((prev) => (nextScanFilter(prev, urlFilter) === null ? prev : scanFilterToRows(urlFilter)));
+  }, [urlFilter]);
 
   const [filterOpen, setFilterOpen] = useState(false);
 
@@ -174,20 +167,17 @@ export function ScansPage() {
   );
 
   // One apply model for every field, as on Findings: edits apply after a short
-  // debounce and reset the page. An incomplete datetime-local value reads as
-  // empty, so it applies once complete.
+  // debounce and reset the page. Rows that still describe the URL's filter (the
+  // same instants at the builder's precision) change nothing, so a valid deep
+  // link keeps its exact bounds and its offset.
   useEffect(() => {
     const t = setTimeout(() => {
-      const next = {
-        q: nameDraft.trim(),
-        started_from: localInputToRFC3339(fromDraft) ?? "",
-        started_to: localInputToRFC3339(toDraft) ?? "",
-      };
-      if (next.q === qParam.trim() && next.started_from === fromParam && next.started_to === toParam) return;
+      const next = nextScanFilter(rows, urlFilter);
+      if (next === null) return;
       applyFilters({ ...next, offset: 0 }, "typing");
     }, 300);
     return () => clearTimeout(t);
-  }, [nameDraft, fromDraft, toDraft, qParam, fromParam, toParam, applyFilters]);
+  }, [rows, urlFilter, applyFilters]);
 
   const listQuery = useMemo(
     () => ({
@@ -219,17 +209,15 @@ export function ScansPage() {
   const colCount = 7 + (showActions ? 1 : 0);
 
   const onClearFilters = () => {
-    setNameDraft("");
-    setFromDraft("");
-    setToDraft("");
+    setRows([]);
     applyFilters({}, "clear");
   };
 
   const hasFilters = !!(qParam || fromParam || toParam);
   const chips = [
     qParam && { key: "q" as const, label: "Name", value: qParam },
-    fromParam && { key: "started_from" as const, label: "Started from", value: new Date(fromParam).toLocaleString() },
-    toParam && { key: "started_to" as const, label: "Started to", value: new Date(toParam).toLocaleString() },
+    fromParam && { key: "started_from" as const, label: "Started from", value: boundLabel(fromParam) },
+    toParam && { key: "started_to" as const, label: "Started to", value: boundLabel(toParam) },
   ].filter((c): c is { key: "q" | "started_from" | "started_to"; label: string; value: string } => !!c);
 
   return (
@@ -294,36 +282,17 @@ export function ScansPage() {
 
       {filterOpen && (
         <Card className="space-y-3 p-3">
-          <div className="flex flex-wrap items-end gap-3">
-            <Field label="Name" className="min-w-[14rem] flex-1">
-              <Input
-                value={nameDraft}
-                onChange={(e) => setNameDraft(e.target.value)}
-                placeholder="Target, policy, schedule, or scan ID…"
-                aria-label="Filter scans by name"
-                className="w-full"
-              />
-            </Field>
-            <Field label="Started from">
-              <Input
-                type="datetime-local"
-                value={fromDraft}
-                onChange={(e) => setFromDraft(e.target.value)}
-                aria-label="Started from"
-              />
-            </Field>
-            <Field label="Started to">
-              <Input
-                type="datetime-local"
-                value={toDraft}
-                onChange={(e) => setToDraft(e.target.value)}
-                aria-label="Started to"
-              />
-            </Field>
-          </div>
+          <ConditionBuilder
+            rows={rows}
+            onChange={setRows}
+            targetOptions={[]}
+            fields={SCAN_FIELDS}
+            unique
+            hideClearAll
+          />
           <FormHint>
-            Name matches target, scan policy, and schedule names, or a scan-ID prefix. Start-time bounds are inclusive;
-            queued scans without a start time use their queue time.
+            Name matches target, scan policy, and schedule names, or a scan-ID prefix. Started dates are UTC days and
+            inclusive; queued scans without a start time use their queue time.
           </FormHint>
         </Card>
       )}
