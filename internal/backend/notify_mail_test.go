@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"fmt"
+	"image/png"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -102,12 +103,12 @@ func TestDigestMailLinksAndCounts(t *testing.T) {
 	// Severity hierarchy: non-zero count cells carry their severity color,
 	// zero cells are muted; chips carry the Badge/SeverityBadge tones.
 	for _, want := range []string{
-		"color:#b91c1c",            // critical counts
-		"color:#c2410c",            // high counts
-		"color:#a3a3a3",            // muted zero cells
-		"background-color:#e0e7ff", // New chip
-		"background-color:#dcfce7", // Fixed chip
-		"background-color:#fee2e2", // critical severity chip
+		"color:#b91c1c",             // critical counts
+		"color:#c2410c",             // high counts
+		"gn-zero\" align=\"right\"", // muted zero cells
+		"background-color:#e0e7ff",  // New chip
+		"background-color:#dcfce7",  // Fixed chip
+		"background-color:#fee2e2",  // critical severity chip
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("digest HTML missing style %q", want)
@@ -117,7 +118,7 @@ func TestDigestMailLinksAndCounts(t *testing.T) {
 	if !strings.Contains(html, ">Unknown</th>") {
 		t.Errorf("digest HTML missing Unknown counts column")
 	}
-	if !strings.Contains(html, ">unknown</span>") {
+	if !strings.Contains(html, ">unknown</td>") {
 		t.Errorf("digest HTML missing unknown severity chip")
 	}
 }
@@ -238,6 +239,132 @@ func TestMailCarriesInlineLogo(t *testing.T) {
 		if !strings.Contains(msg.HTML, `alt="Goodnight Check" width="193" height="36"`) {
 			t.Errorf("%s mail logo lacks fixed dimensions", name)
 		}
+	}
+}
+
+// Outlook classic (Word) gets a VML roundrect for the button, and every other
+// client the table-cell button, which carries the padding and the background
+// on the cell because Word ignores padding on an inline link.
+func TestMailOutlookButton(t *testing.T) {
+	digest, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
+	if err != nil {
+		t.Fatal(err)
+	}
+	failed, err := composeFailedMail("https://nsc.example", digestFixtureScan(), store.ScanFailedPayload{Reason: "node down"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scanURL := "https://nsc.example/scans/6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e"
+	for name, html := range map[string]string{"digest": digest.HTML, "failed": failed.HTML} {
+		vml := regexp.MustCompile(`(?s)<!--\[if mso\]><v:roundrect [^>]*href="([^"]*)"[^>]*fillcolor="#4f46e5">.*?>Open scan</center></v:roundrect><!\[endif\]-->`).FindStringSubmatch(html)
+		if vml == nil {
+			t.Fatalf("%s mail has no VML button for Outlook classic", name)
+		}
+		if vml[1] != scanURL {
+			t.Errorf("%s mail VML button href = %q, want %q", name, vml[1], scanURL)
+		}
+		cell := regexp.MustCompile(`(?s)<!--\[if !mso\]><!-->\s*<table[^>]*>\s*<tr>\s*<td class="gn-btn" bgcolor="#4f46e5" style="[^"]*padding:8px 14px;[^"]*">\s*<a class="gn-btn-text" href="` + regexp.QuoteMeta(scanURL) + `" style="([^"]*)">Open scan</a>\s*</td>\s*</tr>\s*</table>\s*<!--<!\[endif\]-->`).FindStringSubmatch(html)
+		if cell == nil {
+			t.Fatalf("%s mail has no table-cell button outside the Outlook branch", name)
+		}
+		if strings.Contains(cell[1], "padding") {
+			t.Errorf("%s mail button link carries padding %q; it belongs on the cell", name, cell[1])
+		}
+		if !strings.Contains(html, "<o:AllowPNG/>") {
+			t.Errorf("%s mail lacks the Office settings for the PNG logo", name)
+		}
+	}
+}
+
+func TestMsoButtonEscapesAndRejectsNonHTTP(t *testing.T) {
+	got := string(msoButton(`https://h.example/a?x="><script>`, `Open & <b>`))
+	if strings.Contains(got, `"><script>`) || strings.Contains(got, "<b>") {
+		t.Errorf("msoButton did not escape its input: %s", got)
+	}
+	if !strings.Contains(got, `href="https://h.example/a?x=&#34;&gt;&lt;script&gt;"`) || !strings.Contains(got, ">Open &amp; &lt;b&gt;</center>") {
+		t.Errorf("msoButton output = %s", got)
+	}
+	for _, href := range []string{"javascript:alert(1)", "data:text/html,x", "//h.example/x", "/scans/1", "not a url\x7f"} {
+		if out := string(msoButton(href, "Open scan")); !strings.Contains(out, `href="#"`) {
+			t.Errorf("msoButton(%q) kept a non-http(s) href: %s", href, out)
+		}
+	}
+}
+
+// Word ignores padding and border-radius on a <span>, so badges are table
+// cells with the background on the cell (bgcolor too).
+func TestMailBadgesAreTableCells(t *testing.T) {
+	msg, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if regexp.MustCompile(`<span[^>]*padding`).MatchString(msg.HTML) {
+		t.Errorf("digest mail pads a <span>; Word ignores it")
+	}
+	for _, want := range []string{
+		`<td bgcolor="#e0e7ff" style="background-color:#e0e7ff;color:#3730a3;padding:2px 8px;`, // New
+		`<td bgcolor="#fee2e2" style="background-color:#fee2e2;color:#991b1b;padding:2px 8px;`, // critical
+		`<td bgcolor="#f5f5f5" style="background-color:#f5f5f5;color:#404040;padding:2px 8px;`, // unknown
+	} {
+		if !strings.Contains(msg.HTML, want) {
+			t.Errorf("digest mail missing badge cell %q", want)
+		}
+	}
+}
+
+// Clients that switch to dark get the mail's own dark theme: the color-scheme
+// hints, prefers-color-scheme for Apple Mail and others, and the
+// [data-ogsc]/[data-ogsb] rules of Outlook.com and the Outlook apps.
+func TestMailDarkModeHints(t *testing.T) {
+	digest, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
+	if err != nil {
+		t.Fatal(err)
+	}
+	failed, err := composeFailedMail("https://nsc.example", digestFixtureScan(), store.ScanFailedPayload{Reason: "node down"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, html := range map[string]string{"digest": digest.HTML, "failed": failed.HTML} {
+		for _, want := range []string{
+			`<meta name="color-scheme" content="light dark">`,
+			`<meta name="supported-color-schemes" content="light dark">`,
+			"@media (prefers-color-scheme: dark)",
+			"[data-ogsc] .gn-text",
+			"[data-ogsb] .gn-card",
+			"[data-ogsb] .gn-brand { background-color: #020617 !important; }",
+			"[data-ogsc] .gn-btn-text { color: #ffffff !important; }",
+			`class="gn-card"`,
+			`class="gn-text"`,
+		} {
+			if !strings.Contains(html, want) {
+				t.Errorf("%s mail missing dark-mode hint %q", name, want)
+			}
+		}
+	}
+}
+
+// The lockup has the midnight bar color baked in: Outlook classic in dark
+// mode lightens the bar but not the image, so a transparent background would
+// make the white "Goodnight" disappear.
+func TestMailLogoIsOpaqueOnMidnight(t *testing.T) {
+	img, err := png.Decode(bytes.NewReader(mailLogoPNG))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := img.Bounds()
+	if b.Dx() != 580 || b.Dy() != 108 {
+		t.Errorf("logo is %dx%d, want 580x108 (3x of 193x36)", b.Dx(), b.Dy())
+	}
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if _, _, _, a := img.At(x, y).RGBA(); a != 0xffff {
+				t.Fatalf("logo pixel (%d,%d) is not opaque", x, y)
+			}
+		}
+	}
+	r, g, bl, _ := img.At(b.Min.X, b.Min.Y).RGBA()
+	if r>>8 != 0x02 || g>>8 != 0x06 || bl>>8 != 0x17 {
+		t.Errorf("logo backing = #%02x%02x%02x, want the bar color #020617", r>>8, g>>8, bl>>8)
 	}
 }
 

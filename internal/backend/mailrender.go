@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
+	"net/url"
 	"strings"
 
 	"github.com/goodnightsec/gn-check/internal/store"
@@ -22,7 +23,9 @@ var mailTemplateFS embed.FS
 // app header: a PNG rendition (108 px high, shown at 36 px) of
 // web/public/goodnight-check-lockup-on-dark.svg, because Gmail and Outlook
 // don't render SVG. The mail header bar is midnight, so it is the -on-dark
-// variant. It rides along as an inline CID part (Content-ID
+// variant, with the midnight bar color (#020617) baked in as an opaque
+// backing: Outlook classic in dark mode lightens the bar but never recolors
+// an image, so a transparent lockup would lose its white "Goodnight". It rides along as an inline CID part (Content-ID
 // <goodnight-check-lockup-on-dark.png>, set by go-mail from the file name), so
 // the markup references src="cid:goodnight-check-lockup-on-dark.png" and the
 // mail still loads nothing from the network.
@@ -39,8 +42,46 @@ func mailLogoInline() []MailImage {
 }
 
 var mailTemplates = template.Must(template.New("mail").Funcs(template.FuncMap{
-	"sevColor": sevColor,
+	"sevColor":    sevColor,
+	"msoHead":     msoHead,
+	"msoButton":   msoButton,
+	"notMsoStart": notMsoStart,
+	"notMsoEnd":   notMsoEnd,
 }).ParseFS(mailTemplateFS, "mailtemplates/*.html"))
+
+// Outlook classic for Windows renders mail with Word's engine. Markup only for
+// it goes in conditional comments (<!--[if mso]>), but html/template drops
+// every comment in template text, so these helpers emit them as trusted HTML.
+// Their markup is constant except msoButton's href and label, which it
+// escapes itself.
+
+// msoHead lets Word show the PNG logo and lays the mail out at 96 dpi, so the
+// VML button keeps its pixel size on scaled displays.
+func msoHead() template.HTML {
+	return `<!--[if mso]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->`
+}
+
+// msoButton is the "bulletproof" button for Word: a VML roundrect with a fixed
+// size, fill and white text, which Word neither pads away nor recolors like
+// the inline link. Other clients skip it and show the table-cell button that
+// follows it between notMsoStart and notMsoEnd. The href must be an absolute
+// http(s) URL, as html/template would require of an href; anything else
+// renders as "#".
+func msoButton(href, label string) template.HTML {
+	if u, err := url.Parse(href); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		href = "#"
+	}
+	return template.HTML(`<!--[if mso]>` +
+		`<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="` + template.HTMLEscapeString(href) + `" style="height:33px;v-text-anchor:middle;width:104px;" arcsize="18%" stroke="f" fillcolor="#4f46e5">` +
+		`<w:anchorlock/>` +
+		`<center style="color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;">` + template.HTMLEscapeString(label) + `</center>` +
+		`</v:roundrect>` +
+		`<![endif]-->`)
+}
+
+// notMsoStart and notMsoEnd enclose markup that every client but Word shows.
+func notMsoStart() template.HTML { return `<!--[if !mso]><!-->` }
+func notMsoEnd() template.HTML   { return `<!--<![endif]-->` }
 
 // renderMailTemplate executes one embedded mail document.
 func renderMailTemplate(name string, data any) (string, error) {
@@ -163,6 +204,11 @@ type digestCountCell struct {
 	N        int
 }
 
+// mailBadge is the context of the "badge" partial in layout.html.
+type mailBadge struct {
+	BG, FG, Text string
+}
+
 type digestFindingRow struct {
 	StatusBG   string
 	StatusFG   string
@@ -174,6 +220,16 @@ type digestFindingRow struct {
 	TemplateID string
 	MatchedAt  string
 	URL        string
+}
+
+// StatusBadge is the row's status badge.
+func (r digestFindingRow) StatusBadge() mailBadge {
+	return mailBadge{BG: r.StatusBG, FG: r.StatusFG, Text: r.StatusText}
+}
+
+// SevBadge is the row's severity badge.
+func (r digestFindingRow) SevBadge() mailBadge {
+	return mailBadge{BG: r.SevBG, FG: r.SevFG, Text: r.Severity}
 }
 
 func newDigestMailData(scan store.ScanRow, base, title, subject string, p store.ScanDigestPayload, listed []store.ScanDigestFinding, extra int) digestMailData {

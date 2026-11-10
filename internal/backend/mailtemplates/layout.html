@@ -5,10 +5,18 @@ value below is contextually escaped — including hrefs. Styling is inline on
 purpose: mail clients routinely strip or ignore <style> blocks, so the layout
 must survive with nothing but these attributes.
 
-Colors mirror the web app's light theme (docs/UI_STYLE_GUIDE.md): neutral
+Colors mirror the web app's theme (docs/UI_STYLE_GUIDE.md): neutral
 surfaces, indigo links/buttons, the severity ramp red→orange→amber→yellow→sky
 and the midnight brand bar with the Goodnight Check lockup from
-web/src/components/Brand.tsx.
+web/src/components/Brand.tsx. The inline colors are the light theme; the
+<style> block in "head" adds the dark theme for clients that switch to dark
+and honor it (Apple Mail, Outlook.com and the Outlook apps).
+
+Outlook classic for Windows renders with Word's engine, which ignores padding
+on inline elements and border-radius, and in dark mode inverts colors on its
+own. The layout therefore survives inversion without CSS: the lockup PNG has
+its midnight backing baked in (no transparency), the button is a padded table
+cell with a VML roundrect fallback for Word, and badges are table cells.
 
 Typography mirrors web/src/index.css: the system UI sans stack sits inline on
 <body> and every table cell, because many clients ignore <style> blocks and
@@ -16,18 +24,109 @@ Outlook doesn't inherit fonts into tables; the mono stack (docs/
 UI_STYLE_GUIDE.md) is kept inline for machine values only.
 */}}
 
+{{define "head"}}
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <title>{{.Title}}</title>
+  {{msoHead}}
+  <style>
+    /* Additive-only: everything below degrades gracefully. The layout lives in
+       inline styles; here only the page gutter adapts to mobile width, and the
+       dark theme applies where a client switches to dark (prefers-color-scheme
+       for Apple Mail and others, [data-ogsc]/[data-ogsb] for Outlook.com and
+       the Outlook apps). The brand bar and the button keep their colors in
+       both themes. */
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    @media (max-width: 620px) {
+      .nsc-pad { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+    @media (prefers-color-scheme: dark) {
+      body, .gn-page { background-color: #0a0a0a !important; }
+      .gn-card { background-color: #171717 !important; border-color: #262626 !important; }
+      .gn-footer { background-color: #0a0a0a !important; }
+      .gn-line { border-color: #262626 !important; }
+      .gn-text { color: #f5f5f5 !important; }
+      .gn-muted { color: #a3a3a3 !important; }
+      .gn-zero { color: #737373 !important; }
+      .gn-link { color: #a5b4fc !important; }
+      .gn-sev-critical { color: #f87171 !important; }
+      .gn-sev-high { color: #fb923c !important; }
+      .gn-sev-medium { color: #fbbf24 !important; }
+      .gn-sev-low { color: #facc15 !important; }
+      .gn-sev-info { color: #38bdf8 !important; }
+      .gn-sev-unknown { color: #a3a3a3 !important; }
+      .gn-reason { background-color: #450a0a !important; }
+      .gn-reason-label { color: #fca5a5 !important; }
+      .gn-reason-text { color: #fecaca !important; }
+      .gn-brand { background-color: #020617 !important; }
+      .gn-btn { background-color: #4f46e5 !important; }
+      .gn-btn-text { color: #ffffff !important; }
+    }
+    [data-ogsb] .gn-page { background-color: #0a0a0a !important; }
+    [data-ogsb] .gn-card { background-color: #171717 !important; }
+    [data-ogsb] .gn-footer { background-color: #0a0a0a !important; }
+    [data-ogsb] .gn-reason { background-color: #450a0a !important; }
+    [data-ogsb] .gn-brand { background-color: #020617 !important; }
+    [data-ogsb] .gn-btn { background-color: #4f46e5 !important; }
+    [data-ogsc] .gn-text { color: #f5f5f5 !important; }
+    [data-ogsc] .gn-muted { color: #a3a3a3 !important; }
+    [data-ogsc] .gn-zero { color: #737373 !important; }
+    [data-ogsc] .gn-link { color: #a5b4fc !important; }
+    [data-ogsc] .gn-sev-critical { color: #f87171 !important; }
+    [data-ogsc] .gn-sev-high { color: #fb923c !important; }
+    [data-ogsc] .gn-sev-medium { color: #fbbf24 !important; }
+    [data-ogsc] .gn-sev-low { color: #facc15 !important; }
+    [data-ogsc] .gn-sev-info { color: #38bdf8 !important; }
+    [data-ogsc] .gn-sev-unknown { color: #a3a3a3 !important; }
+    [data-ogsc] .gn-reason-label { color: #fca5a5 !important; }
+    [data-ogsc] .gn-reason-text { color: #fecaca !important; }
+    [data-ogsc] .gn-btn-text { color: #ffffff !important; }
+  </style>
+</head>
+{{end}}
+
 {{define "brand"}}
-<td style="background-color:#020617;padding:18px 32px;border-radius:8px 8px 0 0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <img src="cid:goodnight-check-lockup-on-dark.png" alt="Goodnight Check" width="193" height="36" style="display:block;width:193px;height:36px;border:0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:36px;color:#67e8f9;">
+<td class="gn-brand" bgcolor="#020617" style="background-color:#020617;padding:18px 32px;border-radius:8px 8px 0 0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <img src="cid:goodnight-check-lockup-on-dark.png" alt="Goodnight Check" width="193" height="36" style="display:block;width:193px;height:36px;border:0;background-color:#020617;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:36px;color:#67e8f9;">
 </td>
 {{end}}
 
+{{/* The "Open scan" button. Word (Outlook classic) gets the VML roundrect, a
+fixed-size shape that it does not pad away or recolor; every other client
+gets a table cell that carries the padding and the background (bgcolor too),
+so the button keeps its shape even where padding on the link is ignored. */}}
+{{define "button"}}
+{{msoButton .ScanURL "Open scan"}}
+{{notMsoStart}}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td class="gn-btn" bgcolor="#4f46e5" style="background-color:#4f46e5;border-radius:6px;padding:8px 14px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+      <a class="gn-btn-text" href="{{.ScanURL}}" style="display:inline-block;font-size:13px;line-height:17px;font-weight:600;color:#ffffff;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Open scan</a>
+    </td>
+  </tr>
+</table>
+{{notMsoEnd}}
+{{end}}
+
+{{/* A status or severity badge. The padding and the background sit on a table
+cell, because Word ignores both on an inline <span>. Expects .BG, .FG, .Text. */}}
+{{define "badge"}}
+<table role="presentation" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td bgcolor="{{.BG}}" style="background-color:{{.BG}};color:{{.FG}};padding:2px 8px;border-radius:4px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">{{.Text}}</td>
+  </tr>
+</table>
+{{end}}
+
 {{define "footer"}}
-<td class="nsc-pad" style="padding:16px 32px;background-color:#fafafa;border-top:1px solid #e5e5e5;border-radius:0 0 8px 8px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="font-size:12px;color:#737373;">
+<td class="nsc-pad gn-footer gn-line" bgcolor="#fafafa" style="padding:16px 32px;background-color:#fafafa;border-top:1px solid #e5e5e5;border-radius:0 0 8px 8px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div class="gn-muted" style="font-size:12px;color:#737373;">
     Scan <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;">{{.ScanID}}</span>{{if .Policy}} · Policy {{.Policy}}{{end}}
   </div>
-  <div style="margin-top:6px;font-size:12px;line-height:1.5;color:#737373;">
+  <div class="gn-muted" style="margin-top:6px;font-size:12px;line-height:1.5;color:#737373;">
     Links open in Goodnight Check — you'll need to sign in as usual. No presigned URLs.
   </div>
 </td>
