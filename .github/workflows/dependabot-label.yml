@@ -1,0 +1,43 @@
+name: Dependabot review label
+
+# Copy unchanged to .github/workflows/dependabot-label.yml in each repository.
+# When Dependabot opens or reopens a pull request, add needs-review so the
+# Reviewer's Review queue picks it up (procedures/rol-bot-routines.md in
+# goodnightsec/company).
+#
+# The label is added with GITHUB_TOKEN, which does not trigger the
+# bot-trigger workflow. The Reviewer's scheduled run at 10:00 or 15:00
+# picks the pull request up.
+#
+# pull_request_target, not pull_request: Dependabot pull requests get a
+# read-only GITHUB_TOKEN on pull_request. This workflow checks out no code,
+# runs no pull request code, and only adds a label.
+#
+# The label must exist in the repository: the GitHub hardening guideline
+# requires the state labels needs-review, changes-requested,
+# ready-for-maintainer and blocked.
+
+on:
+  pull_request_target:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: dependabot-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: Add needs-review
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Add the label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --add-label needs-review
