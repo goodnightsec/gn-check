@@ -18,29 +18,53 @@ import (
 //go:embed mailtemplates/*.html
 var mailTemplateFS embed.FS
 
-// The brand logo in the mail header is the Goodnight Check lockup, as in the
-// app header: a PNG rendition (108 px high, shown at 36 px) of
-// web/public/goodnight-check-lockup-on-dark.svg, because Gmail and Outlook
-// don't render SVG. The mail header bar is midnight, so it is the -on-dark
-// variant. It rides along as an inline CID part (Content-ID
-// <goodnight-check-lockup-on-dark.png>, set by go-mail from the file name), so
-// the markup references src="cid:goodnight-check-lockup-on-dark.png" and the
-// mail still loads nothing from the network.
+// The mail header bar and the "Open scan" button are images, because Outlook
+// classic in dark mode recolors both a cell background and a VML shape but
+// never an image. The bar is one 600x72 picture (stored at 3x, 1800x216) with
+// the Goodnight Check lockup, as in the app header, composited on the midnight
+// color #020617; the button is a 104x33 picture (3x) with the indigo fill and
+// the white label baked in. Both are PNG renditions, because Gmail and Outlook
+// don't render SVG, and ride along as inline CID parts (Content-ID set by
+// go-mail from the file name), so the mail loads nothing from the network.
+// The cells around them keep bgcolor and the alt text, for clients that block
+// images.
 //
-//go:embed mailtemplates/goodnight-check-lockup-on-dark.png
-var mailLogoPNG []byte
+//go:embed mailtemplates/goodnight-check-brand-bar.png
+var mailBrandBarPNG []byte
 
-// mailLogoCID is the cid: reference the mail templates use for the logo.
-const mailLogoCID = "cid:goodnight-check-lockup-on-dark.png"
+//go:embed mailtemplates/open-scan-button.png
+var mailButtonPNG []byte
 
-// mailLogoInline is the inline logo attachment carried by both HTML mails.
-func mailLogoInline() []MailImage {
-	return []MailImage{{Name: strings.TrimPrefix(mailLogoCID, "cid:"), Data: mailLogoPNG}}
+// The cid: references the mail templates use for the two images.
+const (
+	mailBrandBarName = "goodnight-check-brand-bar.png"
+	mailButtonName   = "open-scan-button.png"
+	mailBrandBarCID  = "cid:" + mailBrandBarName
+	mailButtonCID    = "cid:" + mailButtonName
+)
+
+// mailInlineImages are the inline image attachments carried by both HTML mails.
+func mailInlineImages() []MailImage {
+	return []MailImage{
+		{Name: mailBrandBarName, Data: mailBrandBarPNG},
+		{Name: mailButtonName, Data: mailButtonPNG},
+	}
 }
 
 var mailTemplates = template.Must(template.New("mail").Funcs(template.FuncMap{
 	"sevColor": sevColor,
+	"msoHead":  msoHead,
 }).ParseFS(mailTemplateFS, "mailtemplates/*.html"))
+
+// Outlook classic for Windows renders mail with Word's engine. Markup only for
+// it goes in a conditional comment (<!--[if mso]>), but html/template drops
+// every comment in template text, so msoHead emits it as constant trusted HTML.
+
+// msoHead lets Word show the PNG images and lays the mail out at 96 dpi, so the
+// images keep their pixel size on scaled displays.
+func msoHead() template.HTML {
+	return `<!--[if mso]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->`
+}
 
 // renderMailTemplate executes one embedded mail document.
 func renderMailTemplate(name string, data any) (string, error) {
@@ -163,6 +187,11 @@ type digestCountCell struct {
 	N        int
 }
 
+// mailBadge is the context of the "badge" partial in layout.html.
+type mailBadge struct {
+	BG, FG, Text string
+}
+
 type digestFindingRow struct {
 	StatusBG   string
 	StatusFG   string
@@ -174,6 +203,16 @@ type digestFindingRow struct {
 	TemplateID string
 	MatchedAt  string
 	URL        string
+}
+
+// StatusBadge is the row's status badge.
+func (r digestFindingRow) StatusBadge() mailBadge {
+	return mailBadge{BG: r.StatusBG, FG: r.StatusFG, Text: r.StatusText}
+}
+
+// SevBadge is the row's severity badge.
+func (r digestFindingRow) SevBadge() mailBadge {
+	return mailBadge{BG: r.SevBG, FG: r.SevFG, Text: r.Severity}
 }
 
 func newDigestMailData(scan store.ScanRow, base, title, subject string, p store.ScanDigestPayload, listed []store.ScanDigestFinding, extra int) digestMailData {

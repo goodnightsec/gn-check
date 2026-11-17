@@ -174,7 +174,7 @@ func composeDigestMail(base string, scan store.ScanRow, p store.ScanDigestPayloa
 		Subject:      subject,
 		Text:         text.String(),
 		HTML:         html,
-		InlineImages: mailLogoInline(),
+		InlineImages: mailInlineImages(),
 	}, nil
 }
 
@@ -197,7 +197,7 @@ func composeFailedMail(base string, scan store.ScanRow, p store.ScanFailedPayloa
 	if err != nil {
 		return MailMessage{}, err
 	}
-	return MailMessage{Subject: subject, Text: text, HTML: html, InlineImages: mailLogoInline()}, nil
+	return MailMessage{Subject: subject, Text: text, HTML: html, InlineImages: mailInlineImages()}, nil
 }
 
 func writeCountsText(b *strings.Builder, label string, c store.SeverityCounts) {

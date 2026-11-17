@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"fmt"
+	"image/png"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -91,7 +92,7 @@ func TestDigestMailLinksAndCounts(t *testing.T) {
 		`href="https://nsc.example/scans/6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e"`,
 		`href="https://nsc.example/findings/101"`,
 		`href="https://nsc.example/findings/105"`,
-		">Open scan</a>",
+		`alt="Open scan"`,
 		"Scan result changes — prod-web",
 		"Policy: Weekly full scan",
 	} {
@@ -102,12 +103,12 @@ func TestDigestMailLinksAndCounts(t *testing.T) {
 	// Severity hierarchy: non-zero count cells carry their severity color,
 	// zero cells are muted; chips carry the Badge/SeverityBadge tones.
 	for _, want := range []string{
-		"color:#b91c1c",            // critical counts
-		"color:#c2410c",            // high counts
-		"color:#a3a3a3",            // muted zero cells
-		"background-color:#e0e7ff", // New chip
-		"background-color:#dcfce7", // Fixed chip
-		"background-color:#fee2e2", // critical severity chip
+		"color:#b91c1c",             // critical counts
+		"color:#c2410c",             // high counts
+		"gn-zero\" align=\"right\"", // muted zero cells
+		"background-color:#e0e7ff",  // New chip
+		"background-color:#dcfce7",  // Fixed chip
+		"background-color:#fee2e2",  // critical severity chip
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("digest HTML missing style %q", want)
@@ -117,7 +118,7 @@ func TestDigestMailLinksAndCounts(t *testing.T) {
 	if !strings.Contains(html, ">Unknown</th>") {
 		t.Errorf("digest HTML missing Unknown counts column")
 	}
-	if !strings.Contains(html, ">unknown</span>") {
+	if !strings.Contains(html, ">unknown</td>") {
 		t.Errorf("digest HTML missing unknown severity chip")
 	}
 }
@@ -196,11 +197,11 @@ func TestMailHTMLHasNoExternalResources(t *testing.T) {
 				t.Errorf("%s mail contains %q; mails must load no external resources", name, banned)
 			}
 		}
-		// The only allowed src is the inline CID logo; anything else would be
+		// The only allowed src values are the inline CID images; anything else would be
 		// a network fetch (remote image) or a broken reference.
 		for _, m := range regexp.MustCompile(`src="([^"]*)"`).FindAllStringSubmatch(html, -1) {
-			if m[1] != mailLogoCID {
-				t.Errorf("%s mail has a non-inline src %q; only %q may load", name, m[1], mailLogoCID)
+			if m[1] != mailBrandBarCID && m[1] != mailButtonCID {
+				t.Errorf("%s mail has a non-inline src %q; only %q and %q may load", name, m[1], mailBrandBarCID, mailButtonCID)
 			}
 		}
 		for _, m := range regexp.MustCompile(`href="([^"]*)"`).FindAllStringSubmatch(html, -1) {
@@ -211,7 +212,7 @@ func TestMailHTMLHasNoExternalResources(t *testing.T) {
 	}
 }
 
-func TestMailCarriesInlineLogo(t *testing.T) {
+func TestMailCarriesInlineImages(t *testing.T) {
 	digest, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
 	if err != nil {
 		t.Fatal(err)
@@ -222,22 +223,162 @@ func TestMailCarriesInlineLogo(t *testing.T) {
 	}
 	pngMagic := []byte("\x89PNG\r\n\x1a\n")
 	for name, msg := range map[string]MailMessage{"digest": digest, "failed": failed} {
-		if len(msg.InlineImages) != 1 {
-			t.Fatalf("%s mail carries %d inline images, want 1", name, len(msg.InlineImages))
+		if len(msg.InlineImages) != 2 {
+			t.Fatalf("%s mail carries %d inline images, want 2", name, len(msg.InlineImages))
 		}
-		img := msg.InlineImages[0]
-		if img.Name != "goodnight-check-lockup-on-dark.png" {
-			t.Errorf("%s mail inline image name = %q", name, img.Name)
+		for i, want := range []string{"goodnight-check-brand-bar.png", "open-scan-button.png"} {
+			img := msg.InlineImages[i]
+			if img.Name != want {
+				t.Errorf("%s mail inline image %d name = %q, want %q", name, i, img.Name, want)
+			}
+			if !bytes.HasPrefix(img.Data, pngMagic) {
+				t.Errorf("%s mail inline image %s is not a PNG", name, img.Name)
+			}
+			if !strings.Contains(msg.HTML, `src="cid:`+want+`"`) {
+				t.Errorf("%s mail HTML does not reference cid:%s", name, want)
+			}
 		}
-		if !bytes.HasPrefix(img.Data, pngMagic) {
-			t.Errorf("%s mail inline image is not a PNG", name)
+		if !strings.Contains(msg.HTML, `alt="Goodnight Check" width="600" height="72"`) {
+			t.Errorf("%s mail brand bar lacks fixed dimensions", name)
 		}
-		if !strings.Contains(msg.HTML, `src="`+mailLogoCID+`"`) {
-			t.Errorf("%s mail HTML does not reference %s", name, mailLogoCID)
+	}
+}
+
+// The "Open scan" button is a picture with the fill and the label baked in,
+// inside the link, because Outlook classic in dark mode recolors a VML shape
+// and a cell background but never an image. The cell has no background, so
+// the picture's transparent rounded corners show the card; the alt text has
+// the link color for clients that block images. There is no padding on the
+// link, which Word ignores.
+func TestMailOutlookButton(t *testing.T) {
+	digest, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
+	if err != nil {
+		t.Fatal(err)
+	}
+	failed, err := composeFailedMail("https://nsc.example", digestFixtureScan(), store.ScanFailedPayload{Reason: "node down"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scanURL := "https://nsc.example/scans/6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e"
+	for name, html := range map[string]string{"digest": digest.HTML, "failed": failed.HTML} {
+		btn := regexp.MustCompile(`(?s)<td width="104" height="33" style="([^"]*)">\s*<a href="([^"]*)" class="gn-link" style="([^"]*)"><img src="cid:open-scan-button\.png" alt="Open scan" width="104" height="33" style="[^"]*">\s*</a>\s*</td>`).FindStringSubmatch(html)
+		if btn == nil {
+			t.Fatalf("%s mail has no image button inside its link", name)
 		}
-		if !strings.Contains(msg.HTML, `alt="Goodnight Check" width="193" height="36"`) {
-			t.Errorf("%s mail logo lacks fixed dimensions", name)
+		if btn[2] != scanURL {
+			t.Errorf("%s mail button href = %q, want %q", name, btn[2], scanURL)
 		}
+		if strings.Contains(btn[3], "padding") {
+			t.Errorf("%s mail button link carries padding %q", name, btn[3])
+		}
+		if strings.Contains(btn[1], "background") {
+			t.Errorf("%s mail button cell paints %q behind the transparent corners", name, btn[1])
+		}
+		if strings.Contains(html, `class="gn-btn"`) || strings.Contains(html, ".gn-btn") {
+			t.Errorf("%s mail still has a gn-btn background rule", name)
+		}
+		for _, banned := range []string{"v:roundrect", "<!--[if !mso]>"} {
+			if strings.Contains(html, banned) {
+				t.Errorf("%s mail still contains %q; Outlook recolors it", name, banned)
+			}
+		}
+		if !strings.Contains(html, "<o:AllowPNG/>") {
+			t.Errorf("%s mail lacks the Office settings for the PNG images", name)
+		}
+	}
+}
+
+// Word ignores padding and border-radius on a <span>, so badges are table
+// cells with the background on the cell (bgcolor too).
+func TestMailBadgesAreTableCells(t *testing.T) {
+	msg, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if regexp.MustCompile(`<span[^>]*padding`).MatchString(msg.HTML) {
+		t.Errorf("digest mail pads a <span>; Word ignores it")
+	}
+	for _, want := range []string{
+		`<td bgcolor="#e0e7ff" style="background-color:#e0e7ff;color:#3730a3;padding:2px 8px;`, // New
+		`<td bgcolor="#fee2e2" style="background-color:#fee2e2;color:#991b1b;padding:2px 8px;`, // critical
+		`<td bgcolor="#f5f5f5" style="background-color:#f5f5f5;color:#404040;padding:2px 8px;`, // unknown
+	} {
+		if !strings.Contains(msg.HTML, want) {
+			t.Errorf("digest mail missing badge cell %q", want)
+		}
+	}
+}
+
+// Clients that switch to dark get the mail's own dark theme: the color-scheme
+// hints, prefers-color-scheme for Apple Mail and others, and the
+// [data-ogsc]/[data-ogsb] rules of Outlook.com and the Outlook apps.
+func TestMailDarkModeHints(t *testing.T) {
+	digest, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
+	if err != nil {
+		t.Fatal(err)
+	}
+	failed, err := composeFailedMail("https://nsc.example", digestFixtureScan(), store.ScanFailedPayload{Reason: "node down"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, html := range map[string]string{"digest": digest.HTML, "failed": failed.HTML} {
+		for _, want := range []string{
+			`<meta name="color-scheme" content="light dark">`,
+			`<meta name="supported-color-schemes" content="light dark">`,
+			"@media (prefers-color-scheme: dark)",
+			"[data-ogsc] .gn-text",
+			"[data-ogsb] .gn-card",
+			"[data-ogsb] .gn-brand { background-color: #020617 !important; }",
+			`class="gn-card"`,
+			`class="gn-text"`,
+		} {
+			if !strings.Contains(html, want) {
+				t.Errorf("%s mail missing dark-mode hint %q", name, want)
+			}
+		}
+	}
+}
+
+// The brand bar is one picture with the lockup on the midnight color baked
+// in: Outlook classic in dark mode lightens a cell background but never an
+// image, so the whole bar, not just the lockup, must be in the PNG.
+func TestMailBrandBarIsOpaqueOnMidnight(t *testing.T) {
+	img, err := png.Decode(bytes.NewReader(mailBrandBarPNG))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := img.Bounds()
+	if b.Dx() != 1800 || b.Dy() != 216 {
+		t.Errorf("brand bar is %dx%d, want 1800x216 (3x of 600x72)", b.Dx(), b.Dy())
+	}
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if _, _, _, a := img.At(x, y).RGBA(); a != 0xffff {
+				t.Fatalf("brand bar pixel (%d,%d) is not opaque", x, y)
+			}
+		}
+	}
+	for _, pt := range [][2]int{{b.Min.X, b.Min.Y}, {b.Max.X - 1, b.Min.Y}, {b.Min.X, b.Max.Y - 1}, {b.Max.X - 1, b.Max.Y - 1}, {b.Max.X / 2, b.Min.Y}} {
+		r, g, bl, _ := img.At(pt[0], pt[1]).RGBA()
+		if r>>8 != 0x02 || g>>8 != 0x06 || bl>>8 != 0x17 {
+			t.Errorf("brand bar at %v = #%02x%02x%02x, want the bar color #020617", pt, r>>8, g>>8, bl>>8)
+		}
+	}
+}
+
+// The button picture is 3x of 104x33, with the indigo fill baked in.
+func TestMailButtonImage(t *testing.T) {
+	img, err := png.Decode(bytes.NewReader(mailButtonPNG))
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := img.Bounds()
+	if b.Dx() != 312 || b.Dy() != 99 {
+		t.Errorf("button is %dx%d, want 312x99 (3x of 104x33)", b.Dx(), b.Dy())
+	}
+	r, g, bl, a := img.At(b.Min.X+12, b.Max.Y/2).RGBA()
+	if a != 0xffff || r>>8 != 0x4f || g>>8 != 0x46 || bl>>8 != 0xe5 {
+		t.Errorf("button fill = #%02x%02x%02x alpha %d, want #4f46e5 opaque", r>>8, g>>8, bl>>8, a>>8)
 	}
 }
 
