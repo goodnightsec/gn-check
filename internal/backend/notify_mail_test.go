@@ -246,9 +246,10 @@ func TestMailCarriesInlineImages(t *testing.T) {
 
 // The "Open scan" button is a picture with the fill and the label baked in,
 // inside the link, because Outlook classic in dark mode recolors a VML shape
-// and a cell background but never an image. The cell keeps bgcolor and the
-// image the alt text for clients that block images; there is no padding on
-// the link, which Word ignores.
+// and a cell background but never an image. The cell has no background, so
+// the picture's transparent rounded corners show the card; the alt text has
+// the link color for clients that block images. There is no padding on the
+// link, which Word ignores.
 func TestMailOutlookButton(t *testing.T) {
 	digest, err := composeDigestMail("https://nsc.example", digestFixtureScan(), digestFixturePayload())
 	if err != nil {
@@ -260,15 +261,21 @@ func TestMailOutlookButton(t *testing.T) {
 	}
 	scanURL := "https://nsc.example/scans/6f0c2a1e-9b7d-4f3a-8c2d-1e0b5a9d7f3e"
 	for name, html := range map[string]string{"digest": digest.HTML, "failed": failed.HTML} {
-		btn := regexp.MustCompile(`(?s)<td class="gn-btn" bgcolor="#4f46e5"[^>]*>\s*<a href="([^"]*)" style="([^"]*)"><img src="cid:open-scan-button\.png" alt="Open scan" width="104" height="33" style="[^"]*">\s*</a>\s*</td>`).FindStringSubmatch(html)
+		btn := regexp.MustCompile(`(?s)<td width="104" height="33" style="([^"]*)">\s*<a href="([^"]*)" class="gn-link" style="([^"]*)"><img src="cid:open-scan-button\.png" alt="Open scan" width="104" height="33" style="[^"]*">\s*</a>\s*</td>`).FindStringSubmatch(html)
 		if btn == nil {
 			t.Fatalf("%s mail has no image button inside its link", name)
 		}
-		if btn[1] != scanURL {
-			t.Errorf("%s mail button href = %q, want %q", name, btn[1], scanURL)
+		if btn[2] != scanURL {
+			t.Errorf("%s mail button href = %q, want %q", name, btn[2], scanURL)
 		}
-		if strings.Contains(btn[2], "padding") {
-			t.Errorf("%s mail button link carries padding %q", name, btn[2])
+		if strings.Contains(btn[3], "padding") {
+			t.Errorf("%s mail button link carries padding %q", name, btn[3])
+		}
+		if strings.Contains(btn[1], "background") {
+			t.Errorf("%s mail button cell paints %q behind the transparent corners", name, btn[1])
+		}
+		if strings.Contains(html, `class="gn-btn"`) || strings.Contains(html, ".gn-btn") {
+			t.Errorf("%s mail still has a gn-btn background rule", name)
 		}
 		for _, banned := range []string{"v:roundrect", "<!--[if !mso]>"} {
 			if strings.Contains(html, banned) {

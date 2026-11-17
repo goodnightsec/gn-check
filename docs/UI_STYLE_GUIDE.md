@@ -70,7 +70,7 @@ by `index.css`. That file is generated; don't edit it, replace it with a newer c
   lockup replaces the lockup inside that PNG, again on that backing.
 - Mails are built for Outlook classic for Windows (Word's engine) too: the "Open scan" button is a
   PNG (`open-scan-button.png`, 312×99, shown at 104×33) with the indigo fill and the white label
-  baked in, inside the link; badges are table cells rather than padded `<span>`s; inline styles
+  baked in, inside the link, on a cell with no background so the rounded corners show the card; badges are table cells rather than padded `<span>`s; inline styles
   carry the light theme. The dark theme is a `<style>` block of `gn-*` classes for
   `prefers-color-scheme: dark` and Outlook.com's `[data-ogsc]`/`[data-ogsb]`. Outlook classic
   ignores that `<style>` block and applies its own inversion to the card, sections and text, so its
