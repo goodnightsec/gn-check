@@ -64,15 +64,17 @@ by `index.css`. That file is generated; don't edit it, replace it with a newer c
 - The favicons in `web/public/` (`favicon-32.png`, `apple-touch-icon.png`) are renditions of the
   same mark.
 - Notification mails (`internal/backend/mailtemplates/`) show the same lockup on the same midnight
-  bar, as a PNG rendition of the `-on-dark` file (`goodnight-check-lockup-on-dark.png`, 108 px high,
-  shown at 36 px), because mail clients ignore classes and don't render SVG. The PNG has the bar
-  color `#020617` baked in as an opaque backing, so the lockup stays readable where Outlook classic
-  in dark mode lightens the bar. A newer lockup replaces that PNG too, again on that backing.
-- Mails are built for Outlook classic for Windows (Word's engine) too: buttons are a padded table
-  cell with `bgcolor` plus a VML `v:roundrect` for Word, badges are table cells rather than padded
-  `<span>`s, and inline styles carry the light theme. The dark theme is a `<style>` block of `gn-*`
-  classes for `prefers-color-scheme: dark` and Outlook.com's `[data-ogsc]`/`[data-ogsb]`; the brand
-  bar and the button keep their colors in both themes.
+  bar. The bar is one PNG (`goodnight-check-brand-bar.png`, 1800×216, shown at 600×72) with the
+  `-on-dark` lockup composited on `#020617`, because mail clients ignore classes and don't render
+  SVG, and Outlook classic in dark mode lightens a cell background but never an image. A newer
+  lockup replaces the lockup inside that PNG, again on that backing.
+- Mails are built for Outlook classic for Windows (Word's engine) too: the "Open scan" button is a
+  PNG (`open-scan-button.png`, 312×99, shown at 104×33) with the indigo fill and the white label
+  baked in, inside the link; badges are table cells rather than padded `<span>`s; inline styles
+  carry the light theme. The dark theme is a `<style>` block of `gn-*` classes for
+  `prefers-color-scheme: dark` and Outlook.com's `[data-ogsc]`/`[data-ogsb]`. Outlook classic
+  ignores that `<style>` block and applies its own inversion to the card, sections and text, so its
+  dark mode looks different from the palette; only the two images keep their colors there.
 
 ### Typography
 

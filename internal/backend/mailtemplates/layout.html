@@ -14,9 +14,9 @@ and honor it (Apple Mail, Outlook.com and the Outlook apps).
 
 Outlook classic for Windows renders with Word's engine, which ignores padding
 on inline elements and border-radius, and in dark mode inverts colors on its
-own. The layout therefore survives inversion without CSS: the lockup PNG has
-its midnight backing baked in (no transparency), the button is a padded table
-cell with a VML roundrect fallback for Word, and badges are table cells.
+own. It never recolors images, so the brand bar (lockup on its midnight
+backing) and the "Open scan" button are PNGs with their colors baked in;
+badges are table cells. The rest of the mail shows Outlook's own inversion.
 
 Typography mirrors web/src/index.css: the system UI sans stack sits inline on
 <body> and every table cell, because many clients ignore <style> blocks and
@@ -63,7 +63,6 @@ UI_STYLE_GUIDE.md) is kept inline for machine values only.
       .gn-reason-text { color: #fecaca !important; }
       .gn-brand { background-color: #020617 !important; }
       .gn-btn { background-color: #4f46e5 !important; }
-      .gn-btn-text { color: #ffffff !important; }
     }
     [data-ogsb] .gn-page { background-color: #0a0a0a !important; }
     [data-ogsb] .gn-card { background-color: #171717 !important; }
@@ -83,32 +82,31 @@ UI_STYLE_GUIDE.md) is kept inline for machine values only.
     [data-ogsc] .gn-sev-unknown { color: #a3a3a3 !important; }
     [data-ogsc] .gn-reason-label { color: #fca5a5 !important; }
     [data-ogsc] .gn-reason-text { color: #fecaca !important; }
-    [data-ogsc] .gn-btn-text { color: #ffffff !important; }
   </style>
 </head>
 {{end}}
 
+{{/* The brand bar is one picture: the lockup on the midnight color. Outlook
+classic recolors a cell background in dark mode but never an image. The cell
+keeps bgcolor for clients that block images. */}}
 {{define "brand"}}
-<td class="gn-brand" bgcolor="#020617" style="background-color:#020617;padding:18px 32px;border-radius:8px 8px 0 0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <img src="cid:goodnight-check-lockup-on-dark.png" alt="Goodnight Check" width="193" height="36" style="display:block;width:193px;height:36px;border:0;background-color:#020617;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:36px;color:#67e8f9;">
+<td class="gn-brand" bgcolor="#020617" style="background-color:#020617;padding:0;border-radius:8px 8px 0 0;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <img src="cid:goodnight-check-brand-bar.png" alt="Goodnight Check" width="600" height="72" style="display:block;width:100%;max-width:600px;height:auto;border:0;background-color:#020617;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;line-height:72px;color:#67e8f9;text-indent:32px;">
 </td>
 {{end}}
 
-{{/* The "Open scan" button. Word (Outlook classic) gets the VML roundrect, a
-fixed-size shape that it does not pad away or recolor; every other client
-gets a table cell that carries the padding and the background (bgcolor too),
-so the button keeps its shape even where padding on the link is ignored. */}}
+{{/* The "Open scan" button is a picture (indigo fill and white label baked in)
+inside the link, so Outlook classic cannot recolor it. The cell keeps bgcolor
+and the alt text for clients that block images; Word ignores padding on a
+link, so none is used. */}}
 {{define "button"}}
-{{msoButton .ScanURL "Open scan"}}
-{{notMsoStart}}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0">
   <tr>
-    <td class="gn-btn" bgcolor="#4f46e5" style="background-color:#4f46e5;border-radius:6px;padding:8px 14px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-      <a class="gn-btn-text" href="{{.ScanURL}}" style="display:inline-block;font-size:13px;line-height:17px;font-weight:600;color:#ffffff;text-decoration:none;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">Open scan</a>
+    <td class="gn-btn" bgcolor="#4f46e5" width="104" height="33" style="background-color:#4f46e5;border-radius:6px;width:104px;height:33px;">
+      <a href="{{.ScanURL}}" style="text-decoration:none;"><img src="cid:open-scan-button.png" alt="Open scan" width="104" height="33" style="display:block;width:104px;height:33px;border:0;border-radius:6px;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:33px;font-weight:600;color:#ffffff;text-align:center;"></a>
     </td>
   </tr>
 </table>
-{{notMsoEnd}}
 {{end}}
 
 {{/* A status or severity badge. The padding and the background sit on a table

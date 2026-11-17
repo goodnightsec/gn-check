@@ -114,12 +114,13 @@ Both mails are `text/plain` + a styled `text/html` alternative rendered from emb
 `html/template` documents (`internal/backend/mailtemplates/`, rendered by
 `internal/backend/mailrender.go`) — designed, severity-colored, mobile-friendly, with the text
 part as the complete fallback. The HTML makes no external requests (no remote images, fonts, or
-tracking pixels): the brand logo is the Goodnight Check lockup as a PNG (Gmail and
-Outlook don't render SVG) sent as an inline `image/png` MIME part referenced by CID
-(`<img src="cid:goodnight-check-lockup-on-dark.png">`), so clients that block images simply show
-its alt text, "Goodnight Check". The mails declare light and dark support and carry their own dark
-theme; for Outlook classic for Windows they use a VML button, table-cell badges and a lockup PNG
-with an opaque midnight backing, so its dark mode cannot hide the logo or reflow the button.
+tracking pixels): the header bar (with the Goodnight Check lockup) and the "Open scan" button are PNGs (Gmail and
+Outlook don't render SVG) sent as inline `image/png` MIME parts referenced by CID
+(`<img src="cid:goodnight-check-brand-bar.png">`, `<img src="cid:open-scan-button.png">`), so clients
+that block images show the alt text, "Goodnight Check" and "Open scan". The mails declare light and
+dark support and carry their own dark theme. Outlook classic for Windows ignores that theme and
+inverts the colors itself; it never recolors the two images, so the logo and the button stay
+readable there, while the rest of the mail shows Outlook's own dark rendering.
 Links point at `APP_BASE_URL` and open behind a normal sign-in. The rendered
 documents are pinned by golden-file tests (`internal/backend/testdata/mail/`).
 

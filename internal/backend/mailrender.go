@@ -5,7 +5,6 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
-	"net/url"
 	"strings"
 
 	"github.com/goodnightsec/gn-check/internal/store"
@@ -19,69 +18,53 @@ import (
 //go:embed mailtemplates/*.html
 var mailTemplateFS embed.FS
 
-// The brand logo in the mail header is the Goodnight Check lockup, as in the
-// app header: a PNG rendition (108 px high, shown at 36 px) of
-// web/public/goodnight-check-lockup-on-dark.svg, because Gmail and Outlook
-// don't render SVG. The mail header bar is midnight, so it is the -on-dark
-// variant, with the midnight bar color (#020617) baked in as an opaque
-// backing: Outlook classic in dark mode lightens the bar but never recolors
-// an image, so a transparent lockup would lose its white "Goodnight". It rides along as an inline CID part (Content-ID
-// <goodnight-check-lockup-on-dark.png>, set by go-mail from the file name), so
-// the markup references src="cid:goodnight-check-lockup-on-dark.png" and the
-// mail still loads nothing from the network.
+// The mail header bar and the "Open scan" button are images, because Outlook
+// classic in dark mode recolors both a cell background and a VML shape but
+// never an image. The bar is one 600x72 picture (stored at 3x, 1800x216) with
+// the Goodnight Check lockup, as in the app header, composited on the midnight
+// color #020617; the button is a 104x33 picture (3x) with the indigo fill and
+// the white label baked in. Both are PNG renditions, because Gmail and Outlook
+// don't render SVG, and ride along as inline CID parts (Content-ID set by
+// go-mail from the file name), so the mail loads nothing from the network.
+// The cells around them keep bgcolor and the alt text, for clients that block
+// images.
 //
-//go:embed mailtemplates/goodnight-check-lockup-on-dark.png
-var mailLogoPNG []byte
+//go:embed mailtemplates/goodnight-check-brand-bar.png
+var mailBrandBarPNG []byte
 
-// mailLogoCID is the cid: reference the mail templates use for the logo.
-const mailLogoCID = "cid:goodnight-check-lockup-on-dark.png"
+//go:embed mailtemplates/open-scan-button.png
+var mailButtonPNG []byte
 
-// mailLogoInline is the inline logo attachment carried by both HTML mails.
-func mailLogoInline() []MailImage {
-	return []MailImage{{Name: strings.TrimPrefix(mailLogoCID, "cid:"), Data: mailLogoPNG}}
+// The cid: references the mail templates use for the two images.
+const (
+	mailBrandBarName = "goodnight-check-brand-bar.png"
+	mailButtonName   = "open-scan-button.png"
+	mailBrandBarCID  = "cid:" + mailBrandBarName
+	mailButtonCID    = "cid:" + mailButtonName
+)
+
+// mailInlineImages are the inline image attachments carried by both HTML mails.
+func mailInlineImages() []MailImage {
+	return []MailImage{
+		{Name: mailBrandBarName, Data: mailBrandBarPNG},
+		{Name: mailButtonName, Data: mailButtonPNG},
+	}
 }
 
 var mailTemplates = template.Must(template.New("mail").Funcs(template.FuncMap{
-	"sevColor":    sevColor,
-	"msoHead":     msoHead,
-	"msoButton":   msoButton,
-	"notMsoStart": notMsoStart,
-	"notMsoEnd":   notMsoEnd,
+	"sevColor": sevColor,
+	"msoHead":  msoHead,
 }).ParseFS(mailTemplateFS, "mailtemplates/*.html"))
 
 // Outlook classic for Windows renders mail with Word's engine. Markup only for
-// it goes in conditional comments (<!--[if mso]>), but html/template drops
-// every comment in template text, so these helpers emit them as trusted HTML.
-// Their markup is constant except msoButton's href and label, which it
-// escapes itself.
+// it goes in a conditional comment (<!--[if mso]>), but html/template drops
+// every comment in template text, so msoHead emits it as constant trusted HTML.
 
-// msoHead lets Word show the PNG logo and lays the mail out at 96 dpi, so the
-// VML button keeps its pixel size on scaled displays.
+// msoHead lets Word show the PNG images and lays the mail out at 96 dpi, so the
+// images keep their pixel size on scaled displays.
 func msoHead() template.HTML {
 	return `<!--[if mso]><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->`
 }
-
-// msoButton is the "bulletproof" button for Word: a VML roundrect with a fixed
-// size, fill and white text, which Word neither pads away nor recolors like
-// the inline link. Other clients skip it and show the table-cell button that
-// follows it between notMsoStart and notMsoEnd. The href must be an absolute
-// http(s) URL, as html/template would require of an href; anything else
-// renders as "#".
-func msoButton(href, label string) template.HTML {
-	if u, err := url.Parse(href); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		href = "#"
-	}
-	return template.HTML(`<!--[if mso]>` +
-		`<v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="` + template.HTMLEscapeString(href) + `" style="height:33px;v-text-anchor:middle;width:104px;" arcsize="18%" stroke="f" fillcolor="#4f46e5">` +
-		`<w:anchorlock/>` +
-		`<center style="color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;">` + template.HTMLEscapeString(label) + `</center>` +
-		`</v:roundrect>` +
-		`<![endif]-->`)
-}
-
-// notMsoStart and notMsoEnd enclose markup that every client but Word shows.
-func notMsoStart() template.HTML { return `<!--[if !mso]><!-->` }
-func notMsoEnd() template.HTML   { return `<!--<![endif]-->` }
 
 // renderMailTemplate executes one embedded mail document.
 func renderMailTemplate(name string, data any) (string, error) {
