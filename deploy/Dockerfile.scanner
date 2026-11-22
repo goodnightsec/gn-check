@@ -16,7 +16,7 @@ ARG NAABU_VERSION=2.7.0
 # Pinned to the native build platform so the Go toolchain never runs under
 # emulation; GOOS/GOARCH come from buildx and produce a static binary for the
 # target arch.
-FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:eb61c3873c97416fff0116553fff65d67a3549f72e11d9758849a689cdd8b523 AS build
+FROM --platform=$BUILDPLATFORM golang:1.27-alpine@sha256:70bd7ddea8b6cbe5d6943cde279d6b67feb10cc924fb9100d1d8757c1575b280 AS build
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /src
@@ -95,7 +95,7 @@ RUN mkdir -p /libs && cp -aL /usr/lib64/libpcap.so.1 /libs/ && \
 # (in Docker's default capability set) to open raw sockets — or set
 # NAABU_SCAN_TYPE=connect to fall back to an unprivileged connect scan (no host
 # discovery, no libpcap needed).
-FROM redhat/ubi10-micro:10.2@sha256:8488f5ec082768a01d1ce4e0ef3878f782a40ff6d233afa74bc23d4e740620a4
+FROM redhat/ubi10-micro:10.3@sha256:2ad0f98cb13160c4773c945ef93f88b25831c7f27cd3780d72a7e78b210ea72b
 COPY --from=nuclei /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=libpcap /libs/ /usr/lib64/
 COPY --from=build /out/scanner /usr/local/bin/scanner
